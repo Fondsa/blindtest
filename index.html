@@ -2,23 +2,24 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blindtest Party 🎶 - Accueil</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Blindtest Party 🎶</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body { 
             font-family: 'Fredoka', sans-serif;
-            background-color: #FFDEE9;
-            background-image: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
-            background-attachment: fixed;
+            background: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* Empêche le scroll */
         }
 
         .bento-card {
             background: rgba(255, 255, 255, 0.9);
-            border-radius: 30px;
+            border-radius: 24px;
             border: 4px solid #ffffff;
-            box-shadow: 0 10px 0px rgba(0,0,0,0.05);
+            box-shadow: 0 8px 0px rgba(0,0,0,0.05);
         }
 
         .btn-game {
@@ -29,108 +30,130 @@
             box-shadow: none !important;
         }
 
-        .floating {
-            animation: floating 3s ease-in-out infinite;
-        }
+        .floating { animation: floating 3s ease-in-out infinite; }
         @keyframes floating {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-10px) rotate(2deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Modal simple */
+        #auth-modal {
+            display: flex;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
+<body class="flex items-center justify-center p-4">
 
-    <div class="max-w-2xl w-full space-y-8">
-        
-        <!-- LOGO / TITRE -->
-        <div class="text-center space-y-4">
-            <div class="floating text-7-xl inline-block bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-white mb-2">
-                <span class="text-6xl">🎉</span>
-            </div>
-            <h1 class="text-4xl md:text-6xl font-bold text-gray-800 tracking-tighter">
-                Blindtest <span class="text-rose-500">Party</span>
-            </h1>
-            <p class="text-lg text-gray-600 font-medium">Prêt à défier tes amis en musique ?</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- MODAL DE CONNEXION (S'affiche en premier) -->
+    <div id="auth-modal" class="fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bento-card p-8 w-full max-w-sm text-center space-y-6">
+            <h2 class="text-2xl font-bold text-gray-800">Salut ! 👋</h2>
+            <p class="text-gray-500 text-sm">Connecte-toi pour commencer la partie</p>
             
-            <!-- BLOC CRÉER (HÔTE) -->
-            <div class="bento-card p-8 flex flex-col items-center text-center space-y-6 border-b-8 border-b-purple-400">
-                <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center text-3xl">
-                    👑
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-purple-700">Créer une Room</h2>
-                    <p class="text-sm text-gray-500 mt-2">Deviens le DJ de la soirée et gère les scores.</p>
-                </div>
-                <button onclick="createRoom()" class="btn-game w-full py-4 bg-purple-500 text-white rounded-2xl font-bold text-lg shadow-[0_6px_0_0_#7e22ce] hover:bg-purple-400">
-                    Lancer l'hôte
+            <div class="space-y-3">
+                <button onclick="loginGoogle()" class="btn-game w-full py-3 bg-white border-2 border-gray-100 rounded-xl font-bold flex items-center justify-center gap-2 shadow-sm">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18"> Google
+                </button>
+                <button onclick="showEmailAuth()" class="btn-game w-full py-3 bg-indigo-500 text-white rounded-xl font-bold shadow-[0_4px_0_0_#4338ca]">
+                    📧 Email / Mot de passe
+                </button>
+                <button onclick="loginAnon()" class="btn-game w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold shadow-[0_4px_0_0_#9ca3af]">
+                    👤 Mode Anonyme
                 </button>
             </div>
-
-            <!-- BLOC REJOINDRE (JOUEUR) -->
-            <div class="bento-card p-8 flex flex-col items-center text-center space-y-6 border-b-8 border-b-amber-400">
-                <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center text-3xl">
-                    ⚡
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-amber-700">Rejoindre</h2>
-                    <p class="text-sm text-gray-500 mt-2">Saisis le code pour buzzer plus vite que l'éclair !</p>
-                </div>
-                
-                <div class="w-full space-y-3">
-                    <input type="text" id="roomInput" placeholder="Code (ex: 1234)" 
-                           class="w-full p-4 rounded-xl bg-gray-50 border-2 border-gray-100 text-center font-bold text-xl uppercase tracking-widest outline-none focus:border-amber-400 transition-all">
-                    
-                    <button onclick="joinRoom()" class="btn-game w-full py-4 bg-amber-400 text-amber-900 rounded-2xl font-bold text-lg shadow-[0_6px_0_0_#d97706] hover:bg-amber-300">
-                        C'est parti !
-                    </button>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- FOOTER DISCRET -->
-        <div class="text-center text-gray-500 text-sm font-medium opacity-60">
-            Fait avec ❤️ pour des soirées de folie
         </div>
     </div>
 
-    <script type="module">
-        import { db } from './firebase-config.js';
-        import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <!-- CONTENU PRINCIPAL (Flouté tant que pas connecté) -->
+    <div id="main-content" class="max-w-4xl w-full flex flex-col items-center gap-6 opacity-20 pointer-events-none transition-all duration-500">
+        
+        <div class="text-center">
+            <div class="floating text-5xl bg-white p-4 rounded-3xl shadow-lg border-4 border-white inline-block mb-4">🎵</div>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 tracking-tighter">Blindtest <span class="text-rose-500">Party</span></h1>
+        </div>
 
-        // Fonction pour créer une room
-        window.createRoom = async function() {
-            const roomId = Math.floor(1000 + Math.random() * 9000).toString();
-            const roomRef = ref(db, 'rooms/' + roomId);
-            
-            try {
-                await set(roomRef, {
-                    state: 'waiting',
-                    createdAt: Date.now()
-                });
-                window.location.href = `admin.html?room=${roomId}`;
-            } catch (error) {
-                alert("Erreur lors de la création de la room.");
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
+            <!-- HÔTE -->
+            <div class="bento-card p-6 flex flex-col items-center text-center space-y-4 border-b-8 border-b-purple-400">
+                <span class="text-3xl">👑</span>
+                <h2 class="text-xl font-bold text-purple-700">Créer une Room</h2>
+                <button onclick="createRoom()" class="btn-game w-full py-4 bg-purple-500 text-white rounded-2xl font-bold shadow-[0_6px_0_0_#7e22ce]">
+                    Lancer le salon
+                </button>
+            </div>
+
+            <!-- JOUEUR -->
+            <div class="bento-card p-6 flex flex-col items-center text-center space-y-4 border-b-8 border-b-amber-400">
+                <span class="text-3xl">⚡</span>
+                <h2 class="text-xl font-bold text-amber-700">Rejoindre</h2>
+                <div class="w-full space-y-2">
+                    <input type="text" id="roomInput" placeholder="Code" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-gray-100 text-center font-bold text-xl uppercase outline-none focus:border-amber-400">
+                    <button onclick="joinRoom()" class="btn-game w-full py-4 bg-amber-400 text-amber-900 rounded-2xl font-bold shadow-[0_6px_0_0_#d97706]">
+                        Entrer !
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="logout()" class="text-xs font-bold text-gray-400 underline uppercase tracking-widest hover:text-rose-500">Se déconnecter</button>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { 
+            signInAnonymously, 
+            GoogleAuthProvider, 
+            signInWithPopup,
+            onAuthStateChanged,
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const authModal = document.getElementById('auth-modal');
+        const mainContent = document.getElementById('main-content');
+
+        // Surveiller la connexion
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                authModal.style.display = 'none';
+                mainContent.style.opacity = "1";
+                mainContent.style.pointerEvents = "auto";
+            } else {
+                authModal.style.display = 'flex';
+                mainContent.style.opacity = "0.2";
+                mainContent.style.pointerEvents = "none";
             }
+        });
+
+        window.loginAnon = () => signInAnonymously(auth);
+        
+        window.loginGoogle = () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider);
         };
 
-        // Fonction pour rejoindre une room
+        window.logout = () => signOut(auth);
+
+        window.showEmailAuth = () => {
+            const email = prompt("Ton email :");
+            const pass = prompt("Ton mot de passe :");
+            // Ici tu peux ajouter createUserWithEmailAndPassword ou signInWithEmailAndPassword
+            alert("Fonction email à relier selon ton besoin (Login ou Création)");
+        };
+
+        window.createRoom = async function() {
+            const roomId = Math.floor(1000 + Math.random() * 9000).toString();
+            await set(ref(db, 'rooms/' + roomId), { state: 'waiting', createdAt: Date.now() });
+            window.location.href = `admin.html?room=${roomId}`;
+        };
+
         window.joinRoom = async function() {
             const roomId = document.getElementById('roomInput').value.trim();
-            if (!roomId) return alert("Hé ! Il me faut un code ! 😊");
-
-            const roomRef = ref(db, 'rooms/' + roomId);
-            const snapshot = await get(roomRef);
-
-            if (snapshot.exists()) {
-                window.location.href = `player.html?room=${roomId}`;
-            } else {
-                alert("Oups ! Cette room n'existe pas. Vérifie le code avec l'hôte ! 🧐");
-            }
+            const snapshot = await get(ref(db, 'rooms/' + roomId));
+            if (snapshot.exists()) window.location.href = `player.html?room=${roomId}`;
+            else alert("Code invalide ! 🧐");
         };
     </script>
 </body>
