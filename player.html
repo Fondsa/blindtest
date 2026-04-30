@@ -10,24 +10,23 @@
 </head>
 <body class="bg-indigo-900 text-white min-h-screen flex flex-col items-center justify-center p-6">
     
-    <div class="w-full max-w-xs flex justify-between items-center mb-10 opacity-70">
-        <a href="index.html" class="text-sm font-bold">← Quitter</a>
-        <span class="bg-indigo-800 px-4 py-1 rounded-full text-xs font-mono">ROOM: <span id="room-id-txt">...</span></span>
+    <div class="w-full max-w-xs flex justify-between items-center mb-10 opacity-60">
+        <a href="index.html" class="text-xs font-black uppercase border-b-2 border-indigo-700 pb-1">← Quitter</a>
+        <span class="bg-indigo-800 px-4 py-1 rounded-full text-[10px] font-mono font-bold">ROOM: <span id="room-id" class="text-yellow-400 font-black">...</span></span>
     </div>
 
     <div class="text-center mb-10">
-        <p class="text-xs uppercase opacity-50 mb-1">Joueur</p>
-        <h2 id="player-name" class="text-3xl text-pink-400 uppercase tracking-wide">...</h2>
+        <h2 id="player-name" class="text-2xl text-pink-500 uppercase font-black tracking-widest shadow-sm">...</h2>
     </div>
 
     <div class="relative">
-        <div class="absolute inset-0 bg-red-800 rounded-full translate-y-4"></div>
-        <button id="buzzer" disabled class="relative w-72 h-72 rounded-full bg-red-600 border-8 border-red-500 shadow-inner flex items-center justify-center text-5xl font-black transition-all active:translate-y-2 active:shadow-none disabled:bg-gray-700 disabled:border-gray-600 disabled:opacity-50">
+        <div class="absolute inset-0 bg-red-900 rounded-full translate-y-4"></div>
+        <button id="buzzer" disabled class="relative w-64 h-64 rounded-full bg-red-600 border-8 border-red-500 shadow-inner flex items-center justify-center text-5xl font-black transition-all active:translate-y-2 active:shadow-none disabled:bg-slate-800 disabled:border-slate-700 disabled:opacity-40">
             BUZZ
         </button>
     </div>
 
-    <p id="msg" class="mt-12 text-xl text-center text-indigo-300 italic h-10"></p>
+    <p id="status-msg" class="mt-12 text-lg text-center text-indigo-400 font-bold uppercase tracking-tighter h-10"></p>
 
     <script type="module">
         import { db } from './firebase-config.js';
@@ -40,7 +39,7 @@
         let myName = "";
 
         if(!roomId) window.location.href = "index.html";
-        document.getElementById('room-id-txt').innerText = roomId;
+        document.getElementById('room-id').innerText = roomId;
 
         onAuthStateChanged(getAuth(), async (user) => {
             if(!user) window.location.href = "index.html";
@@ -50,22 +49,23 @@
         });
 
         onValue(roomRef, (snap) => {
-            if(!snap.exists()) { alert("La room est fermée !"); window.location.href="index.html"; return; }
+            if(!snap.exists()) { alert("Room fermée !"); window.location.href="index.html"; return; }
             const data = snap.val();
             const btn = document.getElementById('buzzer');
-            const msg = document.getElementById('msg');
+            const msg = document.getElementById('status-msg');
 
             if (data.state === 'buzzed') {
                 btn.disabled = true;
-                msg.innerText = `${data.winner} a buzzé !`;
+                msg.innerText = `${data.winner} a été le plus rapide !`;
                 msg.classList.add('text-yellow-400');
             } else if (data.state === 'playing') {
                 btn.disabled = false;
-                msg.innerText = "Écoute bien...";
+                msg.innerText = "BUZZ DÈS QUE TU AS LE TITRE !";
                 msg.classList.remove('text-yellow-400');
             } else {
                 btn.disabled = true;
-                msg.innerText = "En attente de l'hôte...";
+                msg.innerText = "L'hôte prépare la musique...";
+                msg.classList.remove('text-yellow-400');
             }
         });
 
