@@ -1,37 +1,126 @@
-// Remplace la partie onValue(roomRef...) par celle-ci :
-onValue(roomRef, (snap) => {
-    const data = snap.val();
-    const buzzZone = document.getElementById('buzz-zone');
-    const winnerName = document.getElementById('winner-name');
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hôte - Blind Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Fredoka One', cursive; }</style>
+</head>
+<body class="bg-indigo-50 p-4 min-h-screen">
+    <div class="max-w-2xl mx-auto flex justify-between items-center mb-6">
+        <a href="index.html" class="bg-white px-4 py-2 rounded-xl shadow text-indigo-600 font-bold text-sm">← MENU</a>
+        <button id="btn-quit" class="text-red-400 font-bold text-xs uppercase tracking-widest">Fermer la Room</button>
+    </div>
 
-    if (data?.buzzList) {
-        // On récupère la liste des buzzers (on transforme l'objet en tableau)
-        const list = Object.values(data.buzzList).sort((a, b) => a.timestamp - b.timestamp);
-        
-        buzzZone.classList.remove('hidden');
-        
-        // On affiche le 1er en gros, et les suivants en dessous
-        winnerName.innerHTML = list.map((player, index) => `
-            <div class="${index === 0 ? 'text-5xl mb-4' : 'text-xl opacity-60'}">
-                ${index + 1}. ${player.name}
+    <div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl border-4 border-indigo-500 overflow-hidden">
+        <div id="copy-container" class="bg-indigo-500 p-6 text-white text-center cursor-pointer hover:bg-indigo-600 transition-all active:scale-95">
+            <p class="text-[10px] uppercase opacity-70 tracking-[0.3em] font-bold">Code Room (cliquer)</p>
+            <h1 id="room-display" class="text-5xl font-black tracking-widest mt-1">-----</h1>
+        </div>
+
+        <div class="p-8 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <select id="theme-select" class="w-full p-4 bg-indigo-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-indigo-500 transition-all">
+                    <option value="">-- THÈME --</option>
+                    <option value="animes">ANIMES</option>
+                    <option value="disney">DISNEY</option>
+                </select>
+                <select id="music-select" class="w-full p-4 bg-indigo-50 rounded-2xl font-bold outline-none disabled:opacity-30 border-2 border-transparent focus:border-indigo-500 transition-all" disabled></select>
             </div>
-        `).join('');
 
-        // Optionnel : On coupe le son seulement au premier buzz
-        if (list.length === 1 && data.state === 'playing') {
-            audio.pause();
-        }
-    } else {
-        buzzZone.classList.add('hidden');
-    }
-});
+            <div class="flex gap-4">
+                <button id="btn-play" class="flex-1 bg-green-500 text-white py-5 rounded-2xl shadow-[0_6px_0_0_#16a34a] active:translate-y-1 active:shadow-none transition-all text-xl font-black uppercase tracking-widest">Lancer</button>
+                <button id="btn-reset" class="flex-1 bg-red-500 text-white py-5 rounded-2xl shadow-[0_6px_0_0_#dc2626] active:translate-y-1 active:shadow-none transition-all text-xl font-black uppercase tracking-widest">Reset</button>
+            </div>
 
-// Modifie le bouton Reset pour vider la liste des buzz
-document.getElementById('btn-reset').onclick = () => {
-    update(roomRef, { 
-        state: 'waiting', 
-        buzzList: null // On efface la liste
-    });
-    audio.pause();
-    audio.currentTime = 0;
-};
+            <!-- ZONE DE BUZZ LIST -->
+            <div id="buzz-zone" class="hidden space-y-3 pt-4">
+                <p class="text-center text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Ordre des Buzzers</p>
+                <div id="buzz-list" class="space-y-2">
+                    <!-- Les noms s'afficheront ici -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { ref, onValue, update, remove, get, onDisconnect, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const library = { animes: [{ name: "Naruto", file: "musiques/animes/naruto.mp3" }], disney: [] };
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+        const roomRef = ref(db, 'rooms/' + roomId);
+        const countRef = ref(db, 'rooms/' + roomId + '/playerCount');
+        const audio = new Audio();
+
+        if(!roomId) window.location.href = "index.html";
+        document.getElementById('room-display').innerText = roomId;
+
+        // Init & Cleanup
+        update(roomRef, { state: 'waiting', playerCount: increment(1), buzzList: null });
+        onDisconnect(countRef).set(increment(-1));
+        onValue(countRef, (snap) => {
+            if ((snap.val() || 0) <= 0) {
+                setTimeout(async () => {
+                    const check = await get(countRef);
+                    if ((check.val() || 0) <= 0) remove(roomRef);
+                }, 120000); 
+            }
+        });
+
+        // Musique controls
+        document.getElementById('theme-select').onchange = (e) => {
+            const tracks = library[e.target.value] || [];
+            const s = document.getElementById('music-select');
+            s.disabled = tracks.length === 0;
+            s.innerHTML = '<option value="">-- MUSIQUE --</option>' + tracks.map(t => `<option value="${t.file}">${t.name}</option>`).join('');
+        };
+        document.getElementById('music-select').onchange = (e) => { audio.src = e.target.value; };
+        
+        document.getElementById('btn-play').onclick = () => { 
+            update(roomRef, { state: 'playing', buzzList: null }); 
+            audio.play(); 
+        };
+        
+        document.getElementById('btn-reset').onclick = () => { 
+            update(roomRef, { state: 'waiting', buzzList: null }); 
+            audio.pause(); 
+            audio.currentTime = 0; 
+        };
+
+        // Surveillance des Buzzers
+        onValue(roomRef, (snap) => {
+            const data = snap.val();
+            const zone = document.getElementById('buzz-zone');
+            const listDiv = document.getElementById('buzz-list');
+
+            if (data?.buzzList) {
+                zone.classList.remove('hidden');
+                // On trie les buzz par timestamp (le plus vieux en premier)
+                const sorted = Object.values(data.buzzList).sort((a, b) => a.time - b.time);
+                
+                listDiv.innerHTML = sorted.map((p, i) => `
+                    <div class="${i === 0 ? 'bg-yellow-400 text-indigo-900 scale-105 border-4 border-yellow-600' : 'bg-white text-gray-400 border-2 border-gray-100'} p-4 rounded-2xl flex justify-between items-center transition-all">
+                        <span class="font-black text-xl uppercase italic">${i + 1}. ${p.name}</span>
+                        <span class="text-[10px] font-bold opacity-50">${i === 0 ? 'MAINTENANT' : '+'+((p.time - sorted[0].time)/1000).toFixed(2)+'s'}</span>
+                    </div>
+                `).join('');
+
+                if (sorted.length === 1 && data.state === 'playing') {
+                    audio.pause(); // Coupe le son au premier buzz
+                    update(roomRef, { state: 'buzzed' });
+                }
+            } else {
+                zone.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('copy-container').onclick = () => { navigator.clipboard.writeText(roomId); alert("Code copié !"); };
+        document.getElementById('btn-quit').onclick = () => { if(confirm("Fermer la partie ?")) { remove(roomRef); window.location.href="index.html"; }};
+    </script>
+</body>
+</html>
