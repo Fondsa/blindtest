@@ -3,134 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hôte - Blindtest Party</title>
+    <title>Hôte - Blindtest Party 🎶</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body { 
-            font-family: 'Montserrat', sans-serif;
-            background: radial-gradient(circle at top left, #4f46e5, #312e81);
+            font-family: 'Fredoka', sans-serif;
+            background-color: #FFDEE9;
+            background-image: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
+            background-attachment: fixed;
         }
-        .fredoka { font-family: 'Fredoka One', cursive; }
         
-        /* Effet de verre */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        .bento-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 30px;
+            border: 4px solid #ffffff;
+            box-shadow: 0 10px 0px rgba(0,0,0,0.05);
         }
 
-        /* Animation des boutons */
-        .btn-push {
-            transition: all 0.1s ease;
-            transform: translateY(-4px);
+        .btn-game {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .btn-push:active {
-            transform: translateY(0px);
+        .btn-game:active {
+            transform: scale(0.95) translateY(4px);
             box-shadow: none !important;
         }
 
-        /* Scrollbar stylisée */
-        #music-list-container::-webkit-scrollbar { width: 6px; }
+        /* Scrollbar Fun */
+        #music-list-container::-webkit-scrollbar { width: 8px; }
         #music-list-container::-webkit-scrollbar-thumb {
-            background: #6366f1;
-            border-radius: 10px;
+            background: #FFB7B2;
+            border-radius: 20px;
         }
 
-        .track-card {
+        .track-item {
             transition: all 0.2s ease;
+            cursor: pointer;
         }
-        .track-card:hover {
-            transform: translateX(8px);
+        .track-item:hover {
+            background-color: #fff4f4;
+            transform: scale(1.02);
         }
     </style>
 </head>
-<body class="p-4 min-h-screen text-slate-800">
+<body class="p-4 md:p-8 min-h-screen">
 
-    <!-- Header avec bouton quitter discret -->
-    <div class="max-w-3xl mx-auto flex justify-between items-center mb-8 pt-4">
-        <a href="index.html" class="group flex items-center gap-2 text-white/80 hover:text-white transition-all font-bold">
-            <span class="bg-white/20 p-2 rounded-lg group-hover:bg-white/30">←</span> 
-            <span class="text-xs uppercase tracking-widest">Quitter la régie</span>
-        </a>
-        <div class="flex items-center gap-2">
-            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span class="text-white/60 text-[10px] uppercase font-black tracking-tighter">Live Control Hub</span>
-        </div>
-    </div>
-
-    <!-- Main Card -->
-    <div class="max-w-3xl mx-auto glass-panel rounded-[2.5rem] overflow-hidden border border-white/20">
+    <div class="max-w-4xl mx-auto space-y-6">
         
-        <!-- Header Room Code -->
-        <div class="bg-gradient-to-r from-indigo-600 to-blue-500 p-8 text-white text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                <svg width="100%" height="100%"><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" stroke-width="0.5"/></pattern><rect width="100%" height="100%" fill="url(#grid)" /></svg>
+        <!-- HEADER RESPONSIVE -->
+        <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="bento-card p-4 flex items-center gap-4 bg-yellow-300 border-yellow-400">
+                <span class="text-4xl">🎮</span>
+                <div>
+                    <p class="text-xs font-bold uppercase opacity-60">Ta Room</p>
+                    <h1 id="room-display" class="text-3xl font-bold text-yellow-900 tracking-tighter">...</h1>
+                </div>
             </div>
-            <p class="text-[11px] uppercase opacity-80 font-black tracking-[0.4em] mb-1">Code de la Room</p>
-            <h1 id="room-display" class="fredoka text-6xl tracking-widest drop-shadow-lg">...</h1>
+            
+            <a href="index.html" class="btn-game bg-white px-6 py-3 rounded-full font-bold text-rose-500 shadow-[0_4px_0_0_#fda4af] hover:bg-rose-50">
+                Quitter la fête 👋
+            </a>
         </div>
 
-        <div class="p-8 space-y-8">
+        <!-- ZONE PRINCIPALE -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <!-- Zone des Filtres -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-indigo-400 uppercase ml-2 italic">Thème</label>
-                    <select id="theme-select" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all cursor-pointer shadow-sm">
-                        <option value="">-- THÈME --</option>
-                        <option value="animes">ANIMES</option>
-                    </select>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-indigo-400 uppercase ml-2 italic">Série</label>
-                    <select id="series-select" disabled class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-slate-100 focus:border-indigo-500 outline-none disabled:opacity-50 transition-all cursor-pointer shadow-sm">
-                        <option value="">-- SÉRIE --</option>
-                    </select>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-indigo-400 uppercase ml-2 italic">Recherche rapide</label>
-                    <input id="search-bar" type="text" placeholder="Titre..." class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all shadow-sm">
-                </div>
-            </div>
-
-            <!-- Liste Musiques -->
-            <div id="music-list-container" class="bg-slate-50/50 rounded-[2rem] p-4 min-h-[200px] max-h-[300px] overflow-y-auto border-2 border-slate-100 flex flex-col gap-2">
-                <div class="m-auto text-center text-slate-400">
-                    <p class="text-3xl mb-2">🎵</p>
-                    <p class="text-sm font-bold italic">Choisissez un thème pour charger la playlist</p>
-                </div>
-            </div>
-
-            <!-- Contrôles de Lecture -->
-            <div class="space-y-6 pt-4">
-                <div class="flex flex-col items-center gap-2">
-                    <span class="text-[10px] uppercase font-black text-slate-400 tracking-widest">En attente de sélection</span>
-                    <h3 id="current-track-display" class="text-indigo-600 font-black text-xl uppercase text-center px-4 max-w-full truncate italic">Aucun titre choisi</h3>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4">
-                    <button id="btn-main-play" disabled class="btn-push w-full bg-emerald-500 text-white py-6 rounded-2xl shadow-[0_8px_0_0_#059669] text-2xl font-black uppercase italic tracking-tighter disabled:opacity-20 disabled:grayscale">
-                        Lancer la musique
-                    </button>
+            <!-- COLONNE GAUCHE : SÉLECTION (Responsive: prend toute la place sur mobile) -->
+            <div class="lg:col-span-7 space-y-6">
+                <div class="bento-card p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span>🎯</span> Choisis tes sons
+                    </h2>
                     
-                    <div class="flex gap-4">
-                        <button id="btn-pause" class="btn-push hidden flex-1 bg-amber-400 text-amber-900 py-4 rounded-xl shadow-[0_6px_0_0_#d97706] font-black uppercase text-sm italic">
-                            Pause
-                        </button>
-                        <button id="btn-reset" class="btn-push flex-1 bg-rose-500 text-white py-4 rounded-xl shadow-[0_6px_0_0_#be123c] font-black uppercase text-sm italic">
-                            Reset Room
-                        </button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <select id="theme-select" class="w-full p-4 rounded-2xl bg-rose-50 border-2 border-rose-100 font-bold text-rose-600 outline-none focus:border-rose-400">
+                            <option value="">🌈 Thème</option>
+                            <option value="animes">Animes</option>
+                        </select>
+                        <select id="series-select" disabled class="w-full p-4 rounded-2xl bg-blue-50 border-2 border-blue-100 font-bold text-blue-600 outline-none focus:border-blue-400 disabled:opacity-50">
+                            <option value="">🎬 Série</option>
+                        </select>
+                    </div>
+
+                    <input id="search-bar" type="text" placeholder="Rechercher une musique..." 
+                           class="w-full p-4 mb-4 rounded-2xl bg-gray-50 border-2 border-gray-100 font-medium outline-none focus:border-purple-400">
+
+                    <div id="music-list-container" class="h-72 overflow-y-auto space-y-2 pr-2">
+                        <!-- Les musiques arrivent ici -->
+                        <div class="text-center py-10 text-gray-400 italic">
+                            Sélectionne un thème pour commencer à mixer !
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- COLONNE DROITE : CONTRÔLES (Fixe ou empilée) -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- PLAYER CARD -->
+                <div class="bento-card p-8 text-center bg-white relative overflow-hidden">
+                    <div id="current-track-display" class="text-lg font-bold text-purple-600 mb-6 min-h-[3rem] flex items-center justify-center">
+                        Choisis un morceau ! 🎵
+                    </div>
+
+                    <div class="space-y-4">
+                        <button id="btn-main-play" disabled class="btn-game w-full py-6 bg-green-400 hover:bg-green-300 text-green-900 rounded-[2rem] text-2xl font-bold shadow-[0_8px_0_0_#34d399] disabled:opacity-30">
+                            LANCER ! 🚀
+                        </button>
+                        
+                        <div class="flex gap-3">
+                            <button id="btn-pause" class="btn-game hidden flex-1 py-4 bg-orange-300 text-orange-900 rounded-2xl font-bold shadow-[0_4px_0_0_#fb923c]">
+                                Pause ⏸
+                            </button>
+                            <button id="btn-reset" class="btn-game flex-1 py-4 bg-rose-400 text-rose-900 rounded-2xl font-bold shadow-[0_4px_0_0_#f43f5e]">
+                                Reset 🔄
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BUZZER LOG (Petit clin d'œil convial) -->
+                <div class="bento-card p-6 bg-purple-500 text-white">
+                    <h3 class="font-bold mb-2 flex items-center gap-2">
+                        <span>⚡</span> État du Buzz
+                    </h3>
+                    <div id="buzz-status" class="text-sm opacity-90 italic">
+                        En attente du premier champion...
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
-    <!-- Script (On garde ta logique fonctionnelle) -->
     <script type="module">
         import { db } from './firebase-config.js';
-        import { ref, update, onValue, increment, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const BASE_URL = "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/";
         const library = {
@@ -157,7 +165,6 @@
         } else {
             document.getElementById('room-display').innerText = roomId;
             const roomRef = ref(db, 'rooms/' + roomId);
-            update(roomRef, { state: 'waiting', buzzList: null });
 
             const themeSelect = document.getElementById('theme-select');
             const seriesSelect = document.getElementById('series-select');
@@ -165,10 +172,11 @@
             const listContainer = document.getElementById('music-list-container');
             const btnMain = document.getElementById('btn-main-play');
             const btnPause = document.getElementById('btn-pause');
+            const buzzStatus = document.getElementById('buzz-status');
 
             themeSelect.onchange = () => {
                 const theme = themeSelect.value;
-                seriesSelect.innerHTML = '<option value="">-- SÉRIE --</option>';
+                seriesSelect.innerHTML = '<option value="">🎬 Série</option>';
                 if(theme && library[theme]) {
                     seriesSelect.disabled = false;
                     Object.keys(library[theme]).forEach(s => {
@@ -188,7 +196,7 @@
                 listContainer.innerHTML = "";
                 
                 if (!theme) {
-                    listContainer.innerHTML = `<div class="m-auto text-center text-slate-400"><p class="text-3xl mb-2">🎵</p><p class="text-sm font-bold italic">Choisissez un thème</p></div>`;
+                    listContainer.innerHTML = `<div class="text-center py-10 text-gray-400 italic">Sélectionne un thème pour commencer !</div>`;
                     return;
                 }
 
@@ -200,16 +208,16 @@
                 
                 filtered.forEach(track => {
                     const div = document.createElement('div');
-                    div.className = "track-card p-4 bg-white border border-slate-100 rounded-2xl font-bold cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 flex justify-between items-center shadow-sm";
-                    div.innerHTML = `<span>${track.name}</span><span class="opacity-0 group-hover:opacity-100 text-indigo-500">▶</span>`;
+                    div.className = "track-item p-4 bg-white border-2 border-transparent rounded-2xl font-bold flex justify-between items-center shadow-sm hover:border-purple-300";
+                    div.innerHTML = `<span>${track.name}</span><span class="text-2xl">🎵</span>`;
                     div.onclick = () => {
                         selectedTrack = track;
                         audio.src = track.file;
                         audio.load();
-                        document.getElementById('current-track-display').innerText = track.name;
+                        document.getElementById('current-track-display').innerText = "Prêt pour : " + track.name;
                         btnMain.disabled = false;
-                        document.querySelectorAll('.track-card').forEach(d => d.classList.remove('border-indigo-500', 'bg-indigo-50', 'ring-2', 'ring-indigo-200'));
-                        div.classList.add('border-indigo-500', 'bg-indigo-50', 'ring-2', 'ring-indigo-200');
+                        document.querySelectorAll('.track-item').forEach(d => d.classList.remove('border-purple-500', 'bg-purple-50'));
+                        div.classList.add('border-purple-500', 'bg-purple-50');
                     };
                     listContainer.appendChild(div);
                 });
@@ -218,28 +226,31 @@
             btnMain.onclick = () => {
                 audio.play();
                 update(roomRef, { state: 'playing', buzzList: null });
-                btnMain.innerText = "MUSIQUE EN COURS...";
-                btnMain.classList.replace('bg-emerald-500', 'bg-indigo-500');
+                btnMain.innerText = "C'EST PARTI ! 🔥";
+                btnMain.classList.replace('bg-green-400', 'bg-purple-400');
                 btnPause.classList.remove('hidden');
+                buzzStatus.innerText = "La musique tourne... Attention aux buzz !";
             };
 
             btnPause.onclick = () => {
-                if (audio.paused) { audio.play(); btnPause.innerText = "Pause"; }
-                else { audio.pause(); btnPause.innerText = "Reprendre"; }
+                if (audio.paused) { audio.play(); btnPause.innerText = "Pause ⏸"; }
+                else { audio.pause(); btnPause.innerText = "Reprendre ▶️"; }
             };
 
             document.getElementById('btn-reset').onclick = () => {
                 update(roomRef, { state: 'waiting', buzzList: null });
                 audio.pause(); audio.currentTime = 0;
-                btnMain.innerText = "Lancer la musique";
-                btnMain.classList.replace('bg-indigo-500', 'bg-emerald-500');
+                btnMain.innerText = "LANCER ! 🚀";
+                btnMain.classList.replace('bg-purple-400', 'bg-green-400');
                 btnPause.classList.add('hidden');
+                buzzStatus.innerText = "Room réinitialisée.";
             };
 
             onValue(roomRef, (snap) => {
                 const data = snap.val();
-                if (data?.state === 'buzzed' || (data?.buzzList && data.state === 'playing')) {
+                if (data?.state === 'buzzed') {
                     audio.pause();
+                    buzzStatus.innerText = "BOUM ! Quelqu'un a buzzé ! ⚡";
                 }
             });
         }
