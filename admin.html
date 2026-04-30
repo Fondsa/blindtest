@@ -77,27 +77,20 @@
         const REPO_NAME = "blindtest";
         const BASE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/main/`;
         
-        const library = {
-            animes: {
-                "One Piece": [
-                    { name: "One Piece - Opening 1 - We Are!", file: "musiques/animes/op1.mp3" },
-                    { name: "One Piece - Opening 26 - Uuuuus!", file: BASE_URL + "One Piece - Opening 26 Uuuuus! 4K 60FPS  CC-[AudioTrimmer.com].mp3" }
-                ],
-                "Naruto": [
-                    { name: "Opening 1 - Rocks", file: "musiques/animes/naruto-op1.mp3" },
-                    { name: "Opening 5 - Seishun Kyousoukyoku", file: "musiques/animes/naruto-op5.mp3" }
-                ]
-            },
-            disney: {
-                "Le Roi Lion": [
-                    { name: "L'histoire de la vie", file: "musiques/disney/lion-king-1.mp3" },
-                    { name: "Je voudrais déjà être roi", file: "musiques/disney/lion-king-2.mp3" }
-                ],
-                "Mulan": [
-                    { name: "Comme un homme", file: "musiques/disney/mulan-1.mp3" }
-                ]
+        
+        const BASE_URL = "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/";
+
+const library = {
+    animes: {
+        "One Piece": [
+            { 
+                name: "Opening 26 - Uuuuus!", 
+                // Ici on encode le nom pour que les espaces deviennent des %20 automatiquement
+                file: BASE_URL + encodeURIComponent("OnePiece_Op26.mp3")
             }
-        };
+        ]
+    }
+};
 
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
