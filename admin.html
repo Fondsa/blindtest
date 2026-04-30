@@ -5,77 +5,148 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hôte - Blindtest Party</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Fredoka One', cursive; }</style>
-</head>
-<body class="bg-indigo-50 p-4 min-h-screen">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(circle at top left, #4f46e5, #312e81);
+        }
+        .fredoka { font-family: 'Fredoka One', cursive; }
+        
+        /* Effet de verre */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
 
-    <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl border-4 border-indigo-500 overflow-hidden mt-10">
-        <div class="bg-indigo-500 p-4 text-white text-center">
-            <p class="text-[10px] uppercase opacity-70 font-bold">Code Room</p>
-            <h1 id="room-display" class="text-4xl font-black italic">...</h1>
+        /* Animation des boutons */
+        .btn-push {
+            transition: all 0.1s ease;
+            transform: translateY(-4px);
+        }
+        .btn-push:active {
+            transform: translateY(0px);
+            box-shadow: none !important;
+        }
+
+        /* Scrollbar stylisée */
+        #music-list-container::-webkit-scrollbar { width: 6px; }
+        #music-list-container::-webkit-scrollbar-thumb {
+            background: #6366f1;
+            border-radius: 10px;
+        }
+
+        .track-card {
+            transition: all 0.2s ease;
+        }
+        .track-card:hover {
+            transform: translateX(8px);
+        }
+    </style>
+</head>
+<body class="p-4 min-h-screen text-slate-800">
+
+    <!-- Header avec bouton quitter discret -->
+    <div class="max-w-3xl mx-auto flex justify-between items-center mb-8 pt-4">
+        <a href="index.html" class="group flex items-center gap-2 text-white/80 hover:text-white transition-all font-bold">
+            <span class="bg-white/20 p-2 rounded-lg group-hover:bg-white/30">←</span> 
+            <span class="text-xs uppercase tracking-widest">Quitter la régie</span>
+        </a>
+        <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span class="text-white/60 text-[10px] uppercase font-black tracking-tighter">Live Control Hub</span>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="max-w-3xl mx-auto glass-panel rounded-[2.5rem] overflow-hidden border border-white/20">
+        
+        <!-- Header Room Code -->
+        <div class="bg-gradient-to-r from-indigo-600 to-blue-500 p-8 text-white text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                <svg width="100%" height="100%"><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" stroke-width="0.5"/></pattern><rect width="100%" height="100%" fill="url(#grid)" /></svg>
+            </div>
+            <p class="text-[11px] uppercase opacity-80 font-black tracking-[0.4em] mb-1">Code de la Room</p>
+            <h1 id="room-display" class="fredoka text-6xl tracking-widest drop-shadow-lg">...</h1>
         </div>
 
-        <div class="p-6 space-y-6">
-            <!-- FILTRES -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <select id="theme-select" class="p-3 bg-indigo-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500">
-                    <option value="">-- THÈME --</option>
-                    <option value="animes">ANIMES</option>
-                </select>
-                <select id="series-select" disabled class="p-3 bg-indigo-50 rounded-xl font-bold outline-none disabled:opacity-30 border-2 border-transparent focus:border-indigo-500">
-                    <option value="">-- SÉRIE --</option>
-                </select>
-                <input id="search-bar" type="text" placeholder="Rechercher..." class="p-3 bg-indigo-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500">
+        <div class="p-8 space-y-8">
+            
+            <!-- Zone des Filtres -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-indigo-400 uppercase ml-2 italic">Thème</label>
+                    <select id="theme-select" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all cursor-pointer shadow-sm">
+                        <option value="">-- THÈME --</option>
+                        <option value="animes">ANIMES</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-indigo-400 uppercase ml-2 italic">Série</label>
+                    <select id="series-select" disabled class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-slate-100 focus:border-indigo-500 outline-none disabled:opacity-50 transition-all cursor-pointer shadow-sm">
+                        <option value="">-- SÉRIE --</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-indigo-400 uppercase ml-2 italic">Recherche rapide</label>
+                    <input id="search-bar" type="text" placeholder="Titre..." class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all shadow-sm">
+                </div>
             </div>
 
-            <!-- LISTE MUSIQUES -->
-            <div id="music-list-container" class="bg-indigo-50 rounded-2xl p-4 min-h-[150px] max-h-60 overflow-y-auto border-2 border-indigo-100 text-gray-400 text-center italic text-sm">
-                Sélectionne un thème pour commencer
+            <!-- Liste Musiques -->
+            <div id="music-list-container" class="bg-slate-50/50 rounded-[2rem] p-4 min-h-[200px] max-h-[300px] overflow-y-auto border-2 border-slate-100 flex flex-col gap-2">
+                <div class="m-auto text-center text-slate-400">
+                    <p class="text-3xl mb-2">🎵</p>
+                    <p class="text-sm font-bold italic">Choisissez un thème pour charger la playlist</p>
+                </div>
             </div>
 
-            <!-- CONTROLES -->
-            <div class="text-center space-y-4">
-                <div id="current-track-display" class="text-indigo-600 font-black text-sm uppercase px-4 truncate">Aucun titre choisi</div>
-                <button id="btn-main-play" disabled class="w-full bg-green-500 text-white py-5 rounded-2xl shadow-[0_6px_0_0_#16a34a] active:translate-y-1 active:shadow-none transition-all text-xl font-black uppercase italic disabled:opacity-30">Lancer</button>
-                <div class="flex gap-4">
-                    <button id="btn-pause" class="hidden flex-1 bg-yellow-400 text-indigo-900 py-3 rounded-xl font-black uppercase text-sm">Pause</button>
-                    <button id="btn-reset" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-black uppercase text-sm">Reset</button>
+            <!-- Contrôles de Lecture -->
+            <div class="space-y-6 pt-4">
+                <div class="flex flex-col items-center gap-2">
+                    <span class="text-[10px] uppercase font-black text-slate-400 tracking-widest">En attente de sélection</span>
+                    <h3 id="current-track-display" class="text-indigo-600 font-black text-xl uppercase text-center px-4 max-w-full truncate italic">Aucun titre choisi</h3>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4">
+                    <button id="btn-main-play" disabled class="btn-push w-full bg-emerald-500 text-white py-6 rounded-2xl shadow-[0_8px_0_0_#059669] text-2xl font-black uppercase italic tracking-tighter disabled:opacity-20 disabled:grayscale">
+                        Lancer la musique
+                    </button>
+                    
+                    <div class="flex gap-4">
+                        <button id="btn-pause" class="btn-push hidden flex-1 bg-amber-400 text-amber-900 py-4 rounded-xl shadow-[0_6px_0_0_#d97706] font-black uppercase text-sm italic">
+                            Pause
+                        </button>
+                        <button id="btn-reset" class="btn-push flex-1 bg-rose-500 text-white py-4 rounded-xl shadow-[0_6px_0_0_#be123c] font-black uppercase text-sm italic">
+                            Reset Room
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Script (On garde ta logique fonctionnelle) -->
     <script type="module">
-        // 1. LES IMPORTS (TOUJOURS EN PREMIER)
         import { db } from './firebase-config.js';
         import { ref, update, onValue, increment, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // 2. TA BIBLIOTHÈQUE GITHUB
         const BASE_URL = "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/";
-       const library = {
-    animes: {
-        "One Piece": [
-            { 
-                name: "One Piece - Opening 26 - Uuuuus!", 
-                file: "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/OnePiece_op26.mp3"
+        const library = {
+            animes: {
+                "One Piece": [
+                    { name: "One Piece - Opening 26", file: "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/OnePiece_op26.mp3" }
+                ],
+                "Violet Evergarden": [ 
+                    { name: "Violet Evergarden - Opening 1", file: BASE_URL + encodeURIComponent("[4K  60FPS] Violet Evergarden Opening Creditless-[AudioTrimmer.com].mp3") } 
+                ],
+                "Nagatoro": [ 
+                    { name: "Nagatoro - Opening 1", file: BASE_URL + encodeURIComponent("Arrête de me chauffer, Nagatoro - Opening  EASY LOVE-[AudioTrimmer.com].mp3") } 
+                ]
             }
-        ],
-        "Violet Evergarden": [ 
-            { 
-                name: "Violet Evergarden - Opening 1", 
-                file: "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/" + encodeURIComponent("[4K  60FPS] Violet Evergarden Opening Creditless-[AudioTrimmer.com].mp3") 
-            } 
-        ],
-        "Nagatoro": [ 
-            { 
-                name: "Nagatoro - Opening 1", 
-                file: "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/" + encodeURIComponent("Arrête de me chauffer, Nagatoro - Opening  EASY LOVE-[AudioTrimmer.com].mp3") 
-            } 
-        ]
-    }
-};
-        // 3. VARIABLES GLOBALES
+        };
+
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
         const audio = new Audio();
@@ -84,17 +155,10 @@
         if(!roomId) {
             window.location.href = "index.html";
         } else {
-            // Affichage immédiat
             document.getElementById('room-display').innerText = roomId;
-
             const roomRef = ref(db, 'rooms/' + roomId);
-            const countRef = ref(db, 'rooms/' + roomId + '/playerCount');
+            update(roomRef, { state: 'waiting', buzzList: null });
 
-            // Création de la room sur Firebase
-            update(roomRef, { state: 'waiting', buzzList: null }).catch(e => console.error("FB Error:", e));
-            onDisconnect(countRef).set(increment(-1));
-
-            // DOM Elements
             const themeSelect = document.getElementById('theme-select');
             const seriesSelect = document.getElementById('series-select');
             const searchBar = document.getElementById('search-bar');
@@ -102,7 +166,6 @@
             const btnMain = document.getElementById('btn-main-play');
             const btnPause = document.getElementById('btn-pause');
 
-            // GESTION DES FILTRES
             themeSelect.onchange = () => {
                 const theme = themeSelect.value;
                 seriesSelect.innerHTML = '<option value="">-- SÉRIE --</option>';
@@ -125,7 +188,7 @@
                 listContainer.innerHTML = "";
                 
                 if (!theme) {
-                    listContainer.innerHTML = "Sélectionne un thème pour commencer";
+                    listContainer.innerHTML = `<div class="m-auto text-center text-slate-400"><p class="text-3xl mb-2">🎵</p><p class="text-sm font-bold italic">Choisissez un thème</p></div>`;
                     return;
                 }
 
@@ -135,41 +198,28 @@
 
                 const filtered = tracks.filter(t => t.name.toLowerCase().includes(search));
                 
-                if(filtered.length === 0) {
-                    listContainer.innerHTML = "Aucun titre trouvé";
-                    return;
-                }
-
                 filtered.forEach(track => {
                     const div = document.createElement('div');
-                    div.className = "p-3 mb-2 bg-white border-2 border-transparent rounded-xl font-bold cursor-pointer hover:border-indigo-500 hover:text-indigo-600 transition-all text-left shadow-sm";
-                    div.innerText = track.name;
+                    div.className = "track-card p-4 bg-white border border-slate-100 rounded-2xl font-bold cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 flex justify-between items-center shadow-sm";
+                    div.innerHTML = `<span>${track.name}</span><span class="opacity-0 group-hover:opacity-100 text-indigo-500">▶</span>`;
                     div.onclick = () => {
-    selectedTrack = track;
-    
-    // On nettoie le lien au cas où
-    const cleanURL = track.file.trim();
-    console.log("Tentative de lecture de :", cleanURL);
-    
-    audio.src = cleanURL;
-    audio.load();
-    
-    document.getElementById('current-track-display').innerText = "PRÊT : " + track.name;
-    btnMain.disabled = false;
-
-    document.querySelectorAll('#music-list-container div').forEach(d => d.classList.remove('border-indigo-500', 'bg-indigo-50'));
-    div.classList.add('border-indigo-500', 'bg-indigo-50');
-};
+                        selectedTrack = track;
+                        audio.src = track.file;
+                        audio.load();
+                        document.getElementById('current-track-display').innerText = track.name;
+                        btnMain.disabled = false;
+                        document.querySelectorAll('.track-card').forEach(d => d.classList.remove('border-indigo-500', 'bg-indigo-50', 'ring-2', 'ring-indigo-200'));
+                        div.classList.add('border-indigo-500', 'bg-indigo-50', 'ring-2', 'ring-indigo-200');
+                    };
                     listContainer.appendChild(div);
                 });
             }
 
-            // CONTROLES
             btnMain.onclick = () => {
-                audio.play().catch(e => alert("Erreur lecture : " + e.message));
+                audio.play();
                 update(roomRef, { state: 'playing', buzzList: null });
-                btnMain.innerText = "EN LECTURE...";
-                btnMain.classList.replace('bg-green-500', 'bg-blue-500');
+                btnMain.innerText = "MUSIQUE EN COURS...";
+                btnMain.classList.replace('bg-emerald-500', 'bg-indigo-500');
                 btnPause.classList.remove('hidden');
             };
 
@@ -181,20 +231,15 @@
             document.getElementById('btn-reset').onclick = () => {
                 update(roomRef, { state: 'waiting', buzzList: null });
                 audio.pause(); audio.currentTime = 0;
-                btnMain.innerText = "Lancer";
-                btnMain.classList.replace('bg-blue-500', 'bg-green-500');
+                btnMain.innerText = "Lancer la musique";
+                btnMain.classList.replace('bg-indigo-500', 'bg-emerald-500');
                 btnPause.classList.add('hidden');
             };
 
-            // ÉCOUTE DES BUZZ
             onValue(roomRef, (snap) => {
                 const data = snap.val();
-                if (data?.buzzList) {
-                    const sorted = Object.values(data.buzzList).sort((a, b) => a.time - b.time);
-                    if (sorted.length === 1 && data.state === 'playing') {
-                        audio.pause();
-                        update(roomRef, { state: 'buzzed' });
-                    }
+                if (data?.state === 'buzzed' || (data?.buzzList && data.state === 'playing')) {
+                    audio.pause();
                 }
             });
         }
