@@ -9,222 +9,196 @@
     <style>body { font-family: 'Fredoka One', cursive; }</style>
 </head>
 <body class="bg-indigo-50 p-4 min-h-screen">
+    <div id="error-logger" class="hidden bg-red-500 text-white p-2 text-[10px] fixed top-0 left-0 w-full z-50"></div>
+
     <div class="max-w-3xl mx-auto flex justify-between items-center mb-6">
         <a href="index.html" class="bg-white px-4 py-2 rounded-xl shadow text-indigo-600 font-bold text-sm">← QUITTER</a>
         <h2 class="text-indigo-900 font-black text-sm italic tracking-tighter uppercase">Blindtest Party : Régie</h2>
     </div>
 
     <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl border-4 border-indigo-500 overflow-hidden">
-        <!-- CODE ROOM -->
         <div id="copy-container" class="bg-indigo-500 p-4 text-white text-center cursor-pointer hover:bg-indigo-600 transition-all">
             <p class="text-[10px] uppercase opacity-70 tracking-[0.3em] font-bold">Code Room</p>
-            <h1 id="room-display" class="text-4xl font-black italic">-----</h1>
+            <h1 id="room-display" class="text-4xl font-black italic">CHARGEMENT...</h1>
         </div>
 
         <div class="p-6 space-y-6">
-            <!-- FILTRES DE SELECTION -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="text-[10px] uppercase text-gray-400 font-black mb-1 block">1. Catégorie</label>
                     <select id="theme-select" class="w-full p-3 bg-indigo-50 rounded-xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none">
                         <option value="">-- TOUT --</option>
                         <option value="animes">🇯🇵 ANIMES</option>
-                        <option value="disney">🏰 DISNEY</option>
                     </select>
                 </div>
                 <div>
-                    <label class="text-[10px] uppercase text-gray-400 font-black mb-1 block">2. Série / Film</label>
-                    <select id="series-select" class="w-full p-3 bg-indigo-50 rounded-xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none disabled:opacity-30" disabled>
-                        <option value="">-- CHOISIR --</option>
-                    </select>
+                    <label class="text-[10px] uppercase text-gray-400 font-black mb-1 block">2. Série</label>
+                    <select id="series-select" class="w-full p-3 bg-indigo-50 rounded-xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none disabled:opacity-30" disabled></select>
                 </div>
                 <div>
-                    <label class="text-[10px] uppercase text-gray-400 font-black mb-1 block">3. Recherche titre</label>
-                    <input id="search-bar" type="text" placeholder="Ex: Opening 1..." class="w-full p-3 bg-indigo-50 rounded-xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none">
+                    <label class="text-[10px] uppercase text-gray-400 font-black mb-1 block">3. Recherche</label>
+                    <input id="search-bar" type="text" placeholder="Titre..." class="w-full p-3 bg-indigo-50 rounded-xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none">
                 </div>
             </div>
 
-            <!-- LISTE DES MUSIQUES -->
             <div class="bg-indigo-50 rounded-2xl p-2 max-h-60 overflow-y-auto border-2 border-indigo-100" id="music-list-container">
-                <p class="text-center py-10 text-gray-400 text-sm italic">Sélectionne une catégorie pour voir les titres</p>
+                <p class="text-center py-10 text-gray-400 text-sm italic">Sélectionne un thème</p>
             </div>
 
-            <!-- CONTROLES SON -->
             <div class="flex flex-col gap-3 pt-4 border-t-2 border-gray-50">
-                <div id="current-track-display" class="text-center text-indigo-600 font-black text-sm uppercase truncate px-4 mb-2">Aucun titre sélectionné</div>
-                <button id="btn-main-play" class="w-full bg-green-500 text-white py-5 rounded-2xl shadow-[0_6px_0_0_#16a34a] active:translate-y-1 active:shadow-none transition-all text-xl font-black uppercase italic disabled:opacity-50" disabled>Lancer la musique</button>
+                <div id="current-track-display" class="text-center text-indigo-600 font-black text-sm uppercase truncate px-4 mb-2">Aucun titre</div>
+                <button id="btn-main-play" class="w-full bg-green-500 text-white py-5 rounded-2xl shadow-[0_6px_0_0_#16a34a] active:translate-y-1 active:shadow-none transition-all text-xl font-black uppercase italic disabled:opacity-50" disabled>Lancer</button>
                 <div class="flex gap-4">
-                    <button id="btn-pause" class="hidden flex-1 bg-yellow-400 text-indigo-900 py-4 rounded-xl shadow-[0_4px_0_0_#b45309] active:translate-y-1 active:shadow-none transition-all font-black uppercase text-sm">Pause</button>
-                    <button id="btn-reset" class="flex-1 bg-red-500 text-white py-4 rounded-xl shadow-[0_4px_0_0_#dc2626] active:translate-y-1 active:shadow-none transition-all font-black uppercase text-sm">Reset Manche</button>
+                    <button id="btn-pause" class="hidden flex-1 bg-yellow-400 text-indigo-900 py-4 rounded-xl font-black uppercase text-sm">Pause</button>
+                    <button id="btn-reset" class="flex-1 bg-red-500 text-white py-4 rounded-xl font-black uppercase text-sm">Reset</button>
                 </div>
             </div>
 
-            <!-- ZONE BUZZERS -->
             <div id="buzz-zone" class="hidden space-y-3 pt-4 border-t-2 border-gray-100">
-                <p class="text-center text-[10px] font-black text-gray-300 uppercase tracking-[0.4em]">Ordre des buzzers</p>
                 <div id="buzz-list" class="space-y-2"></div>
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { db } from './firebase-config.js';
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { ref, onValue, update, remove, get, onDisconnect, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // Importation avec gestion d'erreur
+        try {
+            import { db } from './firebase-config.js';
+            import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+            import { ref, onValue, update, remove, get, onDisconnect, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // STRUCTURE DE TA BIBLIOTHÈQUE
-        const GITHUB_USER = "fondsa"; 
-        const REPO_NAME = "blindtest";
-        const BASE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/main/`;
-        
-        
-        const BASE_URL = "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/";
+            const BASE_URL = "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/";
 
-const library = {
-    animes: {
-        "One Piece": [
-            { 
-                name: "Opening 26 - Uuuuus!", 
-                // Ici on encode le nom pour que les espaces deviennent des %20 automatiquement
-                file: BASE_URL + encodeURIComponent("OnePiece_Op26.mp3")
-            }
-        ]
-    }
-};
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomId = urlParams.get('room');
-        const roomRef = ref(db, 'rooms/' + roomId);
-        const countRef = ref(db, 'rooms/' + roomId + '/playerCount');
-        const audio = new Audio();
-        let selectedTrack = null;
-
-        if(!roomId) window.location.href = "index.html";
-        document.getElementById('room-display').innerText = roomId;
-
-        update(roomRef, { state: 'waiting', playerCount: increment(1), buzzList: null });
-        onDisconnect(countRef).set(increment(-1));
-
-        // ELEMENTS UI
-        const themeSelect = document.getElementById('theme-select');
-        const seriesSelect = document.getElementById('series-select');
-        const searchBar = document.getElementById('search-bar');
-        const listContainer = document.getElementById('music-list-container');
-        const btnMain = document.getElementById('btn-main-play');
-        const btnPause = document.getElementById('btn-pause');
-
-        // 1. CHANGER DE THÈME (ANIMES / DISNEY)
-        themeSelect.onchange = () => {
-            const theme = themeSelect.value;
-            seriesSelect.innerHTML = '<option value="">-- CHOISIR --</option>';
-            if(theme) {
-                seriesSelect.disabled = false;
-                Object.keys(library[theme]).forEach(series => {
-                    seriesSelect.innerHTML += `<option value="${series}">${series}</option>`;
-                });
-            } else {
-                seriesSelect.disabled = true;
-            }
-            renderMusicList();
-        };
-
-        // 2. CHANGER DE SÉRIE OU RECHERCHER
-        seriesSelect.onchange = renderMusicList;
-        searchBar.oninput = renderMusicList;
-
-        function renderMusicList() {
-            const theme = themeSelect.value;
-            const series = seriesSelect.value;
-            const search = searchBar.value.toLowerCase();
-            listContainer.innerHTML = "";
-
-            if (!theme) return;
-
-            let tracksToShow = [];
-            
-            // Si une série est choisie, on prend ses musiques, sinon on prend tout le thème
-            if (series) {
-                tracksToShow = library[theme][series];
-            } else {
-                Object.values(library[theme]).forEach(t => tracksToShow = tracksToShow.concat(t));
-            }
-
-            // Filtrer par recherche
-            const filtered = tracksToShow.filter(t => t.name.toLowerCase().includes(search));
-
-            if (filtered.length === 0) {
-                listContainer.innerHTML = '<p class="text-center py-4 text-gray-400">Aucun titre trouvé</p>';
-                return;
-            }
-
-            filtered.forEach(track => {
-                const div = document.createElement('div');
-                div.className = "p-3 hover:bg-indigo-500 hover:text-white cursor-pointer rounded-xl font-bold text-sm transition-all mb-1 flex justify-between items-center bg-white border border-transparent";
-                if(selectedTrack?.file === track.file) div.className += " border-indigo-500 bg-indigo-50 text-indigo-600";
-                
-                div.innerText = track.name;
-                div.onclick = () => {
-    selectedTrack = track;
-    audio.src = track.file;
-    audio.load(); // FORCE le navigateur à charger le fichier
-    document.getElementById('current-track-display').innerText = "Prêt : " + track.name;
-    btnMain.disabled = false;
-    renderMusicList(); 
-};
-                listContainer.appendChild(div);
-            });
-        }
-
-        // CONTROLES AUDIO
-        btnMain.onclick = () => {
-            if (audio.paused) {
-                audio.play();
-                update(roomRef, { state: 'playing', buzzList: null });
-                btnMain.innerText = "MUSIQUE EN COURS...";
-                btnMain.classList.replace('bg-green-500', 'bg-blue-500');
-                btnPause.classList.remove('hidden');
-            }
-        };
-
-        btnPause.onclick = () => {
-            if (audio.paused) { audio.play(); btnPause.innerText = "Pause"; }
-            else { audio.pause(); btnPause.innerText = "Reprendre"; }
-        };
-
-        document.getElementById('btn-reset').onclick = () => {
-            update(roomRef, { state: 'waiting', buzzList: null });
-            audio.pause(); audio.currentTime = 0;
-            btnMain.innerText = "Relancer la manche";
-            btnMain.classList.replace('bg-blue-500', 'bg-green-500');
-            btnPause.classList.add('hidden');
-        };
-
-        // SURVEILLANCE BUZZERS
-        onValue(roomRef, (snap) => {
-            const data = snap.val();
-            const listDiv = document.getElementById('buzz-list');
-            const zone = document.getElementById('buzz-zone');
-
-            if (data?.buzzList) {
-                zone.classList.remove('hidden');
-                const sorted = Object.values(data.buzzList).sort((a, b) => a.time - b.time);
-                listDiv.innerHTML = sorted.map((p, i) => `
-                    <div class="${i === 0 ? 'bg-yellow-400 border-yellow-600 border-2' : 'bg-gray-100'} p-3 rounded-xl flex justify-between items-center">
-                        <span class="font-black uppercase italic text-sm">${i + 1}. ${p.name}</span>
-                        <span class="text-[9px] font-bold opacity-40">${i === 0 ? 'TOP' : '+'+((p.time - sorted[0].time)/1000).toFixed(2)+'s'}</span>
-                    </div>
-                `).join('');
-
-                if (sorted.length === 1 && data.state === 'playing') {
-                    audio.pause();
-                    update(roomRef, { state: 'buzzed' });
-                    btnMain.innerText = "Relancer après réponse";
-                    btnMain.classList.replace('bg-blue-500', 'bg-green-500');
+            const library = {
+                animes: {
+                    "One Piece": [
+                        { 
+                            name: "Opening 26 - Uuuuus!", 
+                            file: BASE_URL + encodeURIComponent("One Piece - Opening 26 Uuuuus! 4K 60FPS CC-[AudioTrimmer.com].mp3")
+                        }
+                    ]
                 }
-            } else { zone.classList.add('hidden'); }
-        });
+            };
 
-        document.getElementById('copy-container').onclick = () => { navigator.clipboard.writeText(roomId); alert("Code copié !"); };
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomId = urlParams.get('room');
+            
+            if(!roomId) {
+                window.location.href = "index.html";
+            } else {
+                // AFFICHAGE IMMEDIAT DE L'ID
+                document.getElementById('room-display').innerText = roomId;
+                
+                const roomRef = ref(db, 'rooms/' + roomId);
+                const countRef = ref(db, 'rooms/' + roomId + '/playerCount');
+                const audio = new Audio();
+
+                // INITIALISATION FIREBASE
+                update(roomRef, { 
+                    state: 'waiting', 
+                    playerCount: 1, 
+                    buzzList: null,
+                    createdAt: Date.now() 
+                }).then(() => {
+                    console.log("Room créée avec succès !");
+                }).catch(err => {
+                    console.error("Erreur Firebase :", err);
+                    document.getElementById('error-logger').innerText = "Erreur Firebase : " + err.message;
+                    document.getElementById('error-logger').classList.remove('hidden');
+                });
+
+                onDisconnect(countRef).set(increment(-1));
+
+                // LE RESTE DU CODE (Selection, Audio, Buzzers...)
+                const themeSelect = document.getElementById('theme-select');
+                const seriesSelect = document.getElementById('series-select');
+                const searchBar = document.getElementById('search-bar');
+                const listContainer = document.getElementById('music-list-container');
+                const btnMain = document.getElementById('btn-main-play');
+                const btnPause = document.getElementById('btn-pause');
+                let selectedTrack = null;
+
+                themeSelect.onchange = () => {
+                    const theme = themeSelect.value;
+                    seriesSelect.innerHTML = '<option value="">-- CHOISIR --</option>';
+                    if(theme && library[theme]) {
+                        seriesSelect.disabled = false;
+                        Object.keys(library[theme]).forEach(s => {
+                            seriesSelect.innerHTML += `<option value="${s}">${s}</option>`;
+                        });
+                    } else { seriesSelect.disabled = true; }
+                    renderMusicList();
+                };
+
+                seriesSelect.onchange = renderMusicList;
+                searchBar.oninput = renderMusicList;
+
+                function renderMusicList() {
+                    const theme = themeSelect.value;
+                    const series = seriesSelect.value;
+                    const search = searchBar.value.toLowerCase();
+                    listContainer.innerHTML = "";
+                    if (!theme) return;
+                    let tracks = [];
+                    if (series) tracks = library[theme][series];
+                    else Object.values(library[theme]).forEach(t => tracks = [...tracks, ...t]);
+
+                    tracks.filter(t => t.name.toLowerCase().includes(search)).forEach(track => {
+                        const div = document.createElement('div');
+                        div.className = "p-3 mb-1 bg-white border rounded-xl font-bold cursor-pointer hover:bg-indigo-500 hover:text-white";
+                        div.innerText = track.name;
+                        div.onclick = () => {
+                            selectedTrack = track;
+                            audio.src = track.file;
+                            audio.load();
+                            document.getElementById('current-track-display').innerText = "Prêt : " + track.name;
+                            btnMain.disabled = false;
+                        };
+                        listContainer.appendChild(div);
+                    });
+                }
+
+                btnMain.onclick = () => {
+                    audio.play();
+                    update(roomRef, { state: 'playing', buzzList: null });
+                    btnMain.innerText = "LECTURE...";
+                    btnPause.classList.remove('hidden');
+                };
+
+                btnPause.onclick = () => {
+                    if (audio.paused) { audio.play(); btnPause.innerText = "Pause"; }
+                    else { audio.pause(); btnPause.innerText = "Reprendre"; }
+                };
+
+                document.getElementById('btn-reset').onclick = () => {
+                    update(roomRef, { state: 'waiting', buzzList: null });
+                    audio.pause(); audio.currentTime = 0;
+                    btnMain.innerText = "Lancer";
+                    btnPause.classList.add('hidden');
+                };
+
+                onValue(roomRef, (snap) => {
+                    const data = snap.val();
+                    const listDiv = document.getElementById('buzz-list');
+                    if (data?.buzzList) {
+                        document.getElementById('buzz-zone').classList.remove('hidden');
+                        const sorted = Object.values(data.buzzList).sort((a, b) => a.time - b.time);
+                        listDiv.innerHTML = sorted.map((p, i) => `
+                            <div class="p-3 ${i===0?'bg-yellow-400':'bg-gray-100'} rounded-xl flex justify-between font-bold">
+                                <span>${i+1}. ${p.name}</span>
+                            </div>
+                        `).join('');
+                        if (sorted.length === 1 && data.state === 'playing') {
+                            audio.pause();
+                            update(roomRef, { state: 'buzzed' });
+                        }
+                    } else { document.getElementById('buzz-zone').classList.add('hidden'); }
+                });
+            }
+        } catch (e) {
+            console.error("Erreur critique :", e);
+            alert("Erreur de chargement du script. Vérifie la console (F12).");
+        }
     </script>
 </body>
 </html>
