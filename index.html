@@ -39,131 +39,128 @@
             50% { transform: translateY(-15px) rotate(3deg); }
         }
 
-        /* Modal avec flou d'arrière-plan */
         #auth-modal {
             background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
         }
     </style>
 </head>
 <body class="p-4">
 
-    <!-- MODAL DE CONNEXION -->
+    <!-- MODAL DE CONNEXION AVEC PSEUDO -->
     <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-6">
-        <div class="bento-card p-8 w-full max-w-sm text-center space-y-8 shadow-2xl">
-            <div class="text-6xl floating">🌈</div>
-            <div>
-                <h2 class="text-3xl font-bold text-gray-800">On s'identifie ?</h2>
-                <p class="text-gray-500 font-medium">Choisis ta méthode préférée</p>
-            </div>
+        <div class="bento-card p-8 w-full max-w-sm text-center space-y-6 shadow-2xl">
+            <div class="text-6xl floating">✨</div>
             
-            <div class="space-y-3">
-                <button id="login-google" class="btn-game w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-100 py-3 rounded-2xl font-bold hover:bg-gray-50">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20"> Google
-                </button>
+            <div class="space-y-4">
+                <input type="text" id="usernameInput" placeholder="Ton Pseudo..." 
+                       class="w-full p-4 rounded-2xl bg-white border-2 border-pink-100 text-center font-bold text-xl outline-none focus:border-rose-400 transition-all">
+                
+                <div class="h-[2px] bg-gray-100 w-full"></div>
 
-                <button id="login-email" class="btn-game w-full py-4 bg-indigo-500 text-white rounded-2xl font-bold shadow-[0_5px_0_0_#4338ca]">
-                    📧 Email / Mot de passe
-                </button>
-
-                <button id="login-anon" class="btn-game w-full py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold shadow-[0_5px_0_0_#9ca3af]">
-                    👤 Mode Invité
-                </button>
+                <div class="space-y-2">
+                    <button id="login-google" class="btn-game w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-100 py-3 rounded-2xl font-bold hover:bg-gray-50">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20"> Google
+                    </button>
+                    <button id="login-email" class="btn-game w-full py-4 bg-indigo-500 text-white rounded-2xl font-bold shadow-[0_5px_0_0_#4338ca]">📧 Email / Pass</button>
+                    <button id="login-anon" class="btn-game w-full py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold shadow-[0_5px_0_0_#9ca3af]">👤 Invité</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- CONTENU PRINCIPAL -->
-    <div id="main-content" class="max-w-4xl w-full flex flex-col items-center gap-10">
+    <div id="main-content" class="max-w-4xl w-full flex flex-col items-center gap-8">
         
-        <!-- TITRE STYLE BENTO PREMIER DESIGN -->
         <div class="text-center">
-            <div class="floating text-6xl bg-white p-5 rounded-[2.5rem] shadow-xl border-4 border-white inline-block mb-6">🎶</div>
+            <div class="floating text-6xl bg-white p-4 rounded-[2rem] shadow-xl border-4 border-white inline-block mb-4">🎵</div>
             <h1 class="text-5xl md:text-7xl font-bold tracking-tighter">
                 <span class="text-gray-800">Blindtest</span> 
                 <span class="text-rose-500 block md:inline font-black italic">Party</span>
             </h1>
+            <p id="welcome-msg" class="mt-4 text-xl font-bold text-gray-600 bg-white/50 px-6 py-2 rounded-full inline-block">Salut ! 👋</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-3xl">
-            <!-- CRÉER -->
-            <div class="bento-card p-8 flex flex-col items-center text-center space-y-6 border-b-[12px] border-b-purple-400">
-                <span class="text-5xl">👑</span>
-                <button id="btn-create" class="btn-game w-full py-5 bg-purple-500 text-white rounded-[1.5rem] font-bold text-xl shadow-[0_8px_0_0_#7e22ce]">CRÉER ROOM</button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+            <div class="bento-card p-6 flex flex-col items-center text-center space-y-4 border-b-[10px] border-b-purple-400">
+                <span class="text-4xl">👑</span>
+                <button id="btn-create" class="btn-game w-full py-4 bg-purple-500 text-white rounded-2xl font-bold text-xl shadow-[0_6px_0_0_#7e22ce]">CRÉER</button>
             </div>
 
-            <!-- REJOINDRE -->
-            <div class="bento-card p-8 flex flex-col items-center text-center space-y-6 border-b-[12px] border-b-amber-400">
-                <span class="text-5xl">⚡</span>
-                <div class="w-full space-y-4">
-                    <input type="text" id="roomInput" placeholder="CODE" class="w-full p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 text-center font-bold text-2xl uppercase outline-none focus:border-amber-400">
-                    <button id="btn-join" class="btn-game w-full py-5 bg-amber-400 text-amber-900 rounded-[1.5rem] font-bold text-xl shadow-[0_8px_0_0_#d97706]">REJOINDRE</button>
-                </div>
+            <div class="bento-card p-6 flex flex-col items-center text-center space-y-4 border-b-[10px] border-b-amber-400">
+                <span class="text-4xl">⚡</span>
+                <input type="text" id="roomInput" placeholder="CODE" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-gray-100 text-center font-bold text-xl outline-none focus:border-amber-400">
+                <button id="btn-join" class="btn-game w-full py-4 bg-amber-400 text-amber-900 rounded-2xl font-bold text-xl shadow-[0_6px_0_0_#d97706]">REJOINDRE</button>
             </div>
         </div>
 
-        <!-- BOUTON DÉCONNEXION -->
-        <button id="btn-logout" class="btn-game px-8 py-3 bg-white/60 hover:bg-white rounded-full text-xs font-bold text-gray-500 uppercase tracking-widest border-2 border-white">
-            Se déconnecter 🚪
-        </button>
+        <button id="btn-logout" class="btn-game px-6 py-2 bg-white/40 rounded-full text-xs font-bold text-gray-500 uppercase tracking-widest border border-white">Déconnexion 🚪</button>
     </div>
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
         import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { 
-            signInAnonymously, 
-            GoogleAuthProvider, 
-            signInWithPopup, 
-            onAuthStateChanged, 
-            signOut,
-            signInWithEmailAndPassword,
-            createUserWithEmailAndPassword
+            signInAnonymously, GoogleAuthProvider, signInWithPopup, 
+            onAuthStateChanged, signOut, updateProfile,
+            signInWithEmailAndPassword, createUserWithEmailAndPassword
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const modal = document.getElementById('auth-modal');
         const main = document.getElementById('main-content');
+        const userInp = document.getElementById('usernameInput');
 
-        // Gestion de l'état de connexion
-        onAuthStateChanged(auth, (user) => {
+        // Appliquer le pseudo après connexion
+        async function checkAndSetName(user) {
+            const desiredName = userInp.value.trim();
+            // Si l'utilisateur a déjà un nom dans son compte, on le garde, sinon on met celui de l'input
+            if (desiredName && user.displayName !== desiredName) {
+                await updateProfile(user, { displayName: desiredName });
+            }
+            document.getElementById('welcome-msg').innerText = `Salut, ${user.displayName || 'Joueur'} ! 👋`;
+        }
+
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
+                await checkAndSetName(user);
                 modal.classList.add('hidden');
                 main.style.filter = "none";
                 main.style.pointerEvents = "auto";
             } else {
                 modal.classList.remove('hidden');
-                main.style.filter = "blur(10px)";
+                main.style.filter = "blur(15px)";
                 main.style.pointerEvents = "none";
             }
         });
 
-        // Fonctions d'Authentification
+        const checkPseudo = () => {
+            if(!userInp.value.trim()) { alert("Choisis un pseudo d'abord ! 😊"); return false; }
+            return true;
+        };
+
         document.getElementById('login-google').onclick = () => {
-            signInWithPopup(auth, new GoogleAuthProvider()).catch(err => alert(err.message));
+            if(!checkPseudo()) return;
+            signInWithPopup(auth, new GoogleAuthProvider());
         };
 
         document.getElementById('login-anon').onclick = () => {
-            signInAnonymously(auth).catch(err => alert(err.message));
+            if(!checkPseudo()) return;
+            signInAnonymously(auth);
         };
 
         document.getElementById('login-email').onclick = async () => {
+            if(!checkPseudo()) return;
             const email = prompt("Email :");
             const pass = prompt("Mot de passe :");
             if (email && pass) {
-                try {
-                    await signInWithEmailAndPassword(auth, email, pass);
-                } catch (e) {
-                    if(confirm("Compte inexistant. Créer ?")) {
-                        await createUserWithEmailAndPassword(auth, email, pass);
-                    }
-                }
+                try { await signInWithEmailAndPassword(auth, email, pass); }
+                catch (e) { await createUserWithEmailAndPassword(auth, email, pass); }
             }
         };
 
         document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-        // Fonctions de Jeu
         document.getElementById('btn-create').onclick = async () => {
             const id = Math.floor(1000 + Math.random() * 9000).toString();
             await set(ref(db, 'rooms/' + id), { state: 'waiting' });
@@ -172,10 +169,9 @@
 
         document.getElementById('btn-join').onclick = async () => {
             const id = document.getElementById('roomInput').value.trim();
-            if(!id) return;
             const snap = await get(ref(db, 'rooms/' + id));
             if (snap.exists()) window.location.href = `player.html?room=${id}`;
-            else alert("Code invalide ! 🕵️");
+            else alert("Code invalide !");
         };
     </script>
 </body>
