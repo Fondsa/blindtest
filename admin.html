@@ -73,11 +73,15 @@
         import { ref, onValue, update, remove, get, onDisconnect, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         // STRUCTURE DE TA BIBLIOTHÈQUE
+        const GITHUB_USER = "Fondsa"; 
+        const REPO_NAME = "blindtest";
+        const BASE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/main/`;
+        
         const library = {
             animes: {
                 "One Piece": [
                     { name: "One Piece - Opening 1 - We Are!", file: "musiques/animes/op1.mp3" },
-                    { name: "One Piece - Opening 26 - Uuuuus!", file: "One Piece - Opening 26 Uuuuus! 4K 60FPS  CC-[AudioTrimmer.com].mp3" }
+                    { name: "One Piece - Opening 26 - Uuuuus!", file: BASE_URL + "One Piece - Opening 26 Uuuuus! 4K 60FPS  CC-[AudioTrimmer.com].mp3" }
                 ],
                 "Naruto": [
                     { name: "Opening 1 - Rocks", file: "musiques/animes/naruto-op1.mp3" },
