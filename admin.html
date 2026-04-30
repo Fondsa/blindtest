@@ -1,47 +1,106 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hôte - Blind Test</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <style>body { font-family: 'Fredoka One', cursive; }</style>
 </head>
-<body class="bg-gray-100 text-slate-800 p-8">
-    <div class="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-xl">
-        <h1 class="text-3xl mb-6 text-center text-indigo-600">Console Hôte</h1>
-        
-        <div class="bg-indigo-50 p-6 rounded-2xl mb-6">
-            <label class="block mb-2 font-bold">1. Choisir le son (MP3)</label>
-            <input type="file" id="audio-file" accept="audio/*" class="w-full">
+<body class="bg-indigo-50 p-4 min-h-screen">
+    <div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl border-4 border-indigo-500 overflow-hidden">
+        <div class="bg-indigo-500 p-4 text-white text-center">
+            <h1 class="text-3xl">CONSOLE HÔTE 🎧</h1>
+            <p id="host-name" class="opacity-80 text-sm">Chargement...</p>
         </div>
 
-        <div class="flex gap-4 justify-center">
-            <button id="play" class="bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-green-600">LANCER</button>
-            <button id="reset" class="bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-blue-600">RESET BUZZERS</button>
-        </div>
+        <div class="p-6 space-y-6">
+            <!-- Sélection Musique -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-2 uppercase">Thème</label>
+                    <select id="theme-select" class="w-full p-3 bg-gray-100 rounded-xl border-2 border-transparent focus:border-indigo-500 outline-none transition-all">
+                        <option value="">-- Choisir --</option>
+                        <option value="animes">🇯🇵 Animes</option>
+                        <option value="disney">🏰 Disney</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-2 uppercase">Musique</label>
+                    <select id="music-select" class="w-full p-3 bg-gray-100 rounded-xl border-2 border-transparent focus:border-indigo-500 outline-none transition-all" disabled>
+                        <option value="">Choisir thème d'abord</option>
+                    </select>
+                </div>
+            </div>
 
-        <div id="winner-display" class="mt-8 text-center text-2xl font-bold text-red-600 animate-bounce hidden">
-            BUZZ DE : <span id="winner-name"></span>
+            <!-- Contrôles -->
+            <div class="flex gap-4">
+                <button id="btn-play" class="flex-1 bg-green-500 text-white py-4 rounded-2xl shadow-[0_6px_0_0_#16a34a] active:shadow-none active:translate-y-1 transition-all text-xl font-bold uppercase">Lancer</button>
+                <button id="btn-reset" class="flex-1 bg-red-500 text-white py-4 rounded-2xl shadow-[0_6px_0_0_#dc2626] active:shadow-none active:translate-y-1 transition-all text-xl font-bold uppercase">Reset</button>
+            </div>
+
+            <!-- Affichage du Buzz -->
+            <div id="buzz-display" class="hidden transform scale-110">
+                <div class="bg-yellow-400 border-4 border-yellow-600 p-6 rounded-3xl text-center shadow-2xl animate-bounce">
+                    <p class="text-yellow-900 uppercase text-sm font-black">Quelqu'un a buzzé !</p>
+                    <p id="winner-name" class="text-5xl text-indigo-900 mt-2 font-black">NOM</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const audio = new Audio();
-        const winDiv = document.getElementById('winner-display');
-        const winName = document.getElementById('winner-name');
-
-        document.getElementById('audio-file').onchange = (e) => {
-            audio.src = URL.createObjectURL(e.target.files[0]);
+        // CONFIGURATION MUSIQUES
+        const library = {
+            animes: [
+                { name: "Naruto", file: "musiques/animes/naruto.mp3" },
+                { name: "One Piece", file: "musiques/animes/onepiece.mp3" }
+            ],
+            disney: [
+                { name: "Roi Lion", file: "musiques/disney/roilion.mp3" }
+            ]
         };
 
-        document.getElementById('play').onclick = () => {
+        const auth = getAuth();
+        const audio = new Audio();
+        const themeSelect = document.getElementById('theme-select');
+        const musicSelect = document.getElementById('music-select');
+        const buzzDisplay = document.getElementById('buzz-display');
+        const winnerName = document.getElementById('winner-name');
+
+        // Sécurité & Pseudo
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) window.location.href = "index.html";
+            const snap = await get(ref(db, 'users/' + user.uid));
+            document.getElementById('host-name').innerText = "Hôte : " + (snap.val()?.displayName || "Admin");
+        });
+
+        themeSelect.onchange = () => {
+            const theme = themeSelect.value;
+            musicSelect.innerHTML = '<option value="">-- Musique --</option>';
+            if (theme) {
+                musicSelect.disabled = false;
+                library[theme].forEach(m => {
+                    let opt = document.createElement('option');
+                    opt.value = m.file; opt.innerText = m.name;
+                    musicSelect.appendChild(opt);
+                });
+            }
+        };
+
+        musicSelect.onchange = () => { audio.src = musicSelect.value; };
+
+        document.getElementById('btn-play').onclick = () => {
             update(ref(db, 'game'), { state: 'playing', winner: null });
             audio.play();
         };
 
-        document.getElementById('reset').onclick = () => {
+        document.getElementById('btn-reset').onclick = () => {
             update(ref(db, 'game'), { state: 'waiting', winner: null });
         };
 
@@ -49,10 +108,10 @@
             const data = snap.val();
             if (data?.state === 'buzzed') {
                 audio.pause();
-                winDiv.classList.remove('hidden');
-                winName.innerText = data.winner;
-            } else if (data?.state === 'waiting' || data?.state === 'playing') {
-                winDiv.classList.add('hidden');
+                buzzDisplay.classList.remove('hidden');
+                winnerName.innerText = data.winner;
+            } else {
+                buzzDisplay.classList.add('hidden');
             }
         });
     </script>
