@@ -3,44 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hôte - Blind Test</title>
+    <title>Hôte - Blindtest Party</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <style>body { font-family: 'Fredoka One', cursive; }</style>
 </head>
 <body class="bg-indigo-50 p-4 min-h-screen">
     <div class="max-w-2xl mx-auto flex justify-between items-center mb-6">
-        <a href="index.html" class="bg-white px-4 py-2 rounded-xl shadow text-indigo-600 font-bold text-sm">← MENU</a>
-        <button id="btn-quit" class="text-red-400 font-bold text-xs uppercase tracking-widest">Fermer la Room</button>
+        <a href="index.html" class="bg-white px-4 py-2 rounded-xl shadow text-indigo-600 font-bold text-sm tracking-tight">← QUITTER</a>
+        <h2 class="text-indigo-900 font-black text-sm italic tracking-tighter">BLINDTEST PARTY</h2>
     </div>
 
     <div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl border-4 border-indigo-500 overflow-hidden">
-        <div id="copy-container" class="bg-indigo-500 p-6 text-white text-center cursor-pointer hover:bg-indigo-600 transition-all active:scale-95">
-            <p class="text-[10px] uppercase opacity-70 tracking-[0.3em] font-bold">Code Room (cliquer)</p>
-            <h1 id="room-display" class="text-5xl font-black tracking-widest mt-1">-----</h1>
+        <div id="copy-container" class="bg-indigo-500 p-6 text-white text-center cursor-pointer hover:bg-indigo-600 transition-all">
+            <p class="text-[10px] uppercase opacity-70 tracking-[0.3em] font-bold">Code de la Room (copier)</p>
+            <h1 id="room-display" class="text-5xl font-black mt-1">-----</h1>
         </div>
 
         <div class="p-8 space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <select id="theme-select" class="w-full p-4 bg-indigo-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-indigo-500 transition-all">
+                <select id="theme-select" class="w-full p-4 bg-indigo-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none">
                     <option value="">-- THÈME --</option>
                     <option value="animes">ANIMES</option>
                     <option value="disney">DISNEY</option>
                 </select>
-                <select id="music-select" class="w-full p-4 bg-indigo-50 rounded-2xl font-bold outline-none disabled:opacity-30 border-2 border-transparent focus:border-indigo-500 transition-all" disabled></select>
+                <select id="music-select" class="w-full p-4 bg-indigo-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none disabled:opacity-30" disabled></select>
             </div>
 
-            <div class="flex gap-4">
-                <button id="btn-play" class="flex-1 bg-green-500 text-white py-5 rounded-2xl shadow-[0_6px_0_0_#16a34a] active:translate-y-1 active:shadow-none transition-all text-xl font-black uppercase tracking-widest">Lancer</button>
-                <button id="btn-reset" class="flex-1 bg-red-500 text-white py-5 rounded-2xl shadow-[0_6px_0_0_#dc2626] active:translate-y-1 active:shadow-none transition-all text-xl font-black uppercase tracking-widest">Reset</button>
-            </div>
-
-            <!-- ZONE DE BUZZ LIST -->
-            <div id="buzz-zone" class="hidden space-y-3 pt-4">
-                <p class="text-center text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Ordre des Buzzers</p>
-                <div id="buzz-list" class="space-y-2">
-                    <!-- Les noms s'afficheront ici -->
+            <!-- CONTROLES SON -->
+            <div class="flex flex-col gap-4">
+                <button id="btn-main-play" class="w-full bg-green-500 text-white py-6 rounded-2xl shadow-[0_6px_0_0_#16a34a] active:translate-y-1 active:shadow-none transition-all text-2xl font-black uppercase italic tracking-widest">Lancer</button>
+                <div class="flex gap-4">
+                    <button id="btn-pause" class="hidden flex-1 bg-yellow-400 text-indigo-900 py-4 rounded-2xl shadow-[0_4px_0_0_#b45309] active:translate-y-1 active:shadow-none transition-all font-black uppercase">Pause</button>
+                    <button id="btn-reset" class="flex-1 bg-red-500 text-white py-4 rounded-2xl shadow-[0_4px_0_0_#dc2626] active:translate-y-1 active:shadow-none transition-all font-black uppercase">Réinitialiser</button>
                 </div>
+            </div>
+
+            <!-- ZONE BUZZERS -->
+            <div id="buzz-zone" class="hidden space-y-3 pt-4 border-t-2 border-gray-50">
+                <p class="text-center text-[10px] font-black text-gray-300 uppercase tracking-[0.4em]">File d'attente des buzzers</p>
+                <div id="buzz-list" class="space-y-3"></div>
             </div>
         </div>
     </div>
@@ -60,9 +62,10 @@
         if(!roomId) window.location.href = "index.html";
         document.getElementById('room-display').innerText = roomId;
 
-        // Init & Cleanup
         update(roomRef, { state: 'waiting', playerCount: increment(1), buzzList: null });
         onDisconnect(countRef).set(increment(-1));
+
+        // Auto-cleanup 2 min
         onValue(countRef, (snap) => {
             if ((snap.val() || 0) <= 0) {
                 setTimeout(async () => {
@@ -72,47 +75,82 @@
             }
         });
 
-        // Musique controls
+        // Logique UI Musique
         document.getElementById('theme-select').onchange = (e) => {
             const tracks = library[e.target.value] || [];
             const s = document.getElementById('music-select');
             s.disabled = tracks.length === 0;
-            s.innerHTML = '<option value="">-- MUSIQUE --</option>' + tracks.map(t => `<option value="${t.file}">${t.name}</option>`).join('');
+            s.innerHTML = '<option value="">-- CHOIX DU TITRE --</option>' + tracks.map(t => `<option value="${t.file}">${t.name}</option>`).join('');
         };
-        document.getElementById('music-select').onchange = (e) => { audio.src = e.target.value; };
-        
-        document.getElementById('btn-play').onclick = () => { 
-            update(roomRef, { state: 'playing', buzzList: null }); 
-            audio.play(); 
-        };
-        
-        document.getElementById('btn-reset').onclick = () => { 
-            update(roomRef, { state: 'waiting', buzzList: null }); 
-            audio.pause(); 
-            audio.currentTime = 0; 
+        document.getElementById('music-select').onchange = (e) => { 
+            audio.src = e.target.value; 
+            resetUI();
         };
 
-        // Surveillance des Buzzers
+        const btnMain = document.getElementById('btn-main-play');
+        const btnPause = document.getElementById('btn-pause');
+
+        function resetUI() {
+            btnMain.innerText = "Lancer";
+            btnMain.classList.replace('bg-blue-500', 'bg-green-500');
+            btnPause.classList.add('hidden');
+        }
+
+        // Action principale (Lancer / Reprendre)
+        btnMain.onclick = () => {
+            if (audio.paused) {
+                audio.play();
+                update(roomRef, { state: 'playing' });
+                btnMain.innerText = "En cours...";
+                btnMain.classList.replace('bg-green-500', 'bg-blue-500');
+                btnPause.classList.remove('hidden');
+                btnPause.innerText = "Mettre en Pause";
+            }
+        };
+
+        // Bouton Pause dédié
+        btnPause.onclick = () => {
+            if (!audio.paused) {
+                audio.pause();
+                btnMain.innerText = "Reprendre le son";
+                btnMain.classList.replace('bg-blue-500', 'bg-green-500');
+                btnPause.innerText = "En pause";
+            } else {
+                audio.play();
+                btnMain.innerText = "En cours...";
+                btnMain.classList.replace('bg-green-500', 'bg-blue-500');
+                btnPause.innerText = "Mettre en Pause";
+            }
+        };
+
+        document.getElementById('btn-reset').onclick = () => {
+            update(roomRef, { state: 'waiting', buzzList: null });
+            audio.pause();
+            audio.currentTime = 0;
+            resetUI();
+        };
+
         onValue(roomRef, (snap) => {
             const data = snap.val();
-            const zone = document.getElementById('buzz-zone');
             const listDiv = document.getElementById('buzz-list');
+            const zone = document.getElementById('buzz-zone');
 
             if (data?.buzzList) {
                 zone.classList.remove('hidden');
-                // On trie les buzz par timestamp (le plus vieux en premier)
                 const sorted = Object.values(data.buzzList).sort((a, b) => a.time - b.time);
-                
                 listDiv.innerHTML = sorted.map((p, i) => `
-                    <div class="${i === 0 ? 'bg-yellow-400 text-indigo-900 scale-105 border-4 border-yellow-600' : 'bg-white text-gray-400 border-2 border-gray-100'} p-4 rounded-2xl flex justify-between items-center transition-all">
+                    <div class="${i === 0 ? 'bg-yellow-400 text-indigo-900 border-4 border-yellow-500' : 'bg-gray-100 text-gray-500'} p-4 rounded-2xl flex justify-between items-center transition-all">
                         <span class="font-black text-xl uppercase italic">${i + 1}. ${p.name}</span>
-                        <span class="text-[10px] font-bold opacity-50">${i === 0 ? 'MAINTENANT' : '+'+((p.time - sorted[0].time)/1000).toFixed(2)+'s'}</span>
+                        <span class="text-[10px] font-bold opacity-50">${i === 0 ? 'FASTEST' : '+'+((p.time - sorted[0].time)/1000).toFixed(2)+'s'}</span>
                     </div>
                 `).join('');
 
+                // On met en pause au premier buzz, mais on permet à l'host de relancer après
                 if (sorted.length === 1 && data.state === 'playing') {
-                    audio.pause(); // Coupe le son au premier buzz
+                    audio.pause();
                     update(roomRef, { state: 'buzzed' });
+                    btnMain.innerText = "Interroger (Pause)";
+                    btnMain.classList.replace('bg-blue-500', 'bg-green-500');
                 }
             } else {
                 zone.classList.add('hidden');
@@ -120,7 +158,6 @@
         });
 
         document.getElementById('copy-container').onclick = () => { navigator.clipboard.writeText(roomId); alert("Code copié !"); };
-        document.getElementById('btn-quit').onclick = () => { if(confirm("Fermer la partie ?")) { remove(roomRef); window.location.href="index.html"; }};
     </script>
 </body>
 </html>
