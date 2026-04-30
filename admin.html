@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Fredoka One', cursive; }</style>
+</head>
+<body class="bg-gray-100 text-slate-800 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-xl">
+        <h1 class="text-3xl mb-6 text-center text-indigo-600">Console Hôte</h1>
+        
+        <div class="bg-indigo-50 p-6 rounded-2xl mb-6">
+            <label class="block mb-2 font-bold">1. Choisir le son (MP3)</label>
+            <input type="file" id="audio-file" accept="audio/*" class="w-full">
+        </div>
+
+        <div class="flex gap-4 justify-center">
+            <button id="play" class="bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-green-600">LANCER</button>
+            <button id="reset" class="bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-blue-600">RESET BUZZERS</button>
+        </div>
+
+        <div id="winner-display" class="mt-8 text-center text-2xl font-bold text-red-600 animate-bounce hidden">
+            BUZZ DE : <span id="winner-name"></span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const audio = new Audio();
+        const winDiv = document.getElementById('winner-display');
+        const winName = document.getElementById('winner-name');
+
+        document.getElementById('audio-file').onchange = (e) => {
+            audio.src = URL.createObjectURL(e.target.files[0]);
+        };
+
+        document.getElementById('play').onclick = () => {
+            update(ref(db, 'game'), { state: 'playing', winner: null });
+            audio.play();
+        };
+
+        document.getElementById('reset').onclick = () => {
+            update(ref(db, 'game'), { state: 'waiting', winner: null });
+        };
+
+        onValue(ref(db, 'game'), (snap) => {
+            const data = snap.val();
+            if (data?.state === 'buzzed') {
+                audio.pause();
+                winDiv.classList.remove('hidden');
+                winName.innerText = data.winner;
+            } else if (data?.state === 'waiting' || data?.state === 'playing') {
+                winDiv.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
