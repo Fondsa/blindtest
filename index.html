@@ -10,95 +10,166 @@
         body { 
             font-family: 'Fredoka', sans-serif;
             background: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
-            height: 100dvh; /* Adapté aux mobiles */
+            height: 100dvh;
             width: 100vw;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
         .bento-card {
             background: rgba(255, 255, 255, 0.9);
-            border-radius: 24px;
+            border-radius: 32px;
             border: 4px solid #ffffff;
-            box-shadow: 0 8px 0px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 0px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
         }
-        .btn-game { transition: all 0.2s ease; }
-        .btn-game:active { transform: scale(0.95); }
+
+        .btn-game {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-game:active {
+            transform: scale(0.95) translateY(4px);
+            box-shadow: none !important;
+        }
+
+        .floating { animation: floating 3s ease-in-out infinite; }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+
+        .glass-overlay {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
     </style>
 </head>
-<body class="p-4">
+<body class="p-4 md:p-8">
 
-    <!-- LOGIN MODAL -->
-    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/20 backdrop-blur-md">
+    <!-- MODAL DE CONNEXION : LOOK BENTO -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay">
         <div class="bento-card p-8 w-full max-w-sm text-center space-y-6">
-            <h2 class="text-2xl font-bold">On joue ? 🎵</h2>
+            <div class="text-5xl floating">✨</div>
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800">Salut !</h2>
+                <p class="text-gray-500 font-medium">Connecte-toi pour jouer</p>
+            </div>
+            
             <div class="space-y-3">
-                <button id="login-google" class="btn-game w-full py-4 bg-white border-2 border-gray-100 rounded-2xl font-bold flex items-center justify-center gap-2">
+                <button id="login-google" class="btn-game w-full py-4 bg-white border-2 border-gray-100 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-sm hover:border-blue-200">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20"> Google
                 </button>
-                <button id="login-anon" class="btn-game w-full py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold">👤 Mode Anonyme</button>
+                <button id="login-email" class="btn-game w-full py-4 bg-indigo-500 text-white rounded-2xl font-bold shadow-[0_6px_0_0_#4338ca] hover:bg-indigo-400">
+                    📧 Email / Pass
+                </button>
+                <button id="login-anon" class="btn-game w-full py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold shadow-[0_6px_0_0_#9ca3af] hover:bg-gray-100">
+                    👤 Anonyme
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- MAIN APP -->
-    <div id="main-content" class="hidden max-w-2xl w-full flex flex-col items-center gap-8">
-        <div class="text-center">
-            <h1 class="text-5xl font-bold text-gray-800 tracking-tighter italic">Blindtest <span class="text-rose-500 font-black">Party</span></h1>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-            <div class="bento-card p-6 flex flex-col items-center gap-4 border-b-8 border-purple-400">
-                <span class="text-4xl">👑</span>
-                <button id="btn-create" class="btn-game w-full py-5 bg-purple-500 text-white rounded-2xl font-bold text-lg shadow-[0_6px_0_0_#7e22ce]">CRÉER ROOM</button>
-            </div>
-
-            <div class="bento-card p-6 flex flex-col items-center gap-4 border-b-8 border-amber-400">
-                <span class="text-4xl">⚡</span>
-                <input type="text" id="roomInput" placeholder="CODE" class="w-full p-3 rounded-xl bg-gray-100 text-center font-bold text-xl uppercase outline-none focus:ring-4 ring-amber-200">
-                <button id="btn-join" class="btn-game w-full py-5 bg-amber-400 text-amber-900 rounded-2xl font-bold text-lg shadow-[0_6px_0_0_#d97706]">REJOINDRE</button>
-            </div>
-        </div>
+    <!-- CONTENU PRINCIPAL : ÉLÉGANT ET FIXE -->
+    <div id="main-content" class="hidden max-w-4xl w-full flex flex-col items-center gap-8">
         
-        <button id="btn-logout" class="text-xs font-bold text-gray-400 uppercase tracking-widest underline">Changer de compte</button>
+        <div class="text-center">
+            <div class="floating text-6xl bg-white p-5 rounded-[2rem] shadow-xl border-4 border-white inline-block mb-4">🎉</div>
+            <h1 class="text-5xl md:text-6xl font-bold text-gray-800 tracking-tighter">Blindtest <span class="text-rose-500">Party</span></h1>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+            <!-- CARTE HÔTE -->
+            <div class="bento-card p-8 flex flex-col items-center text-center space-y-5 border-b-[12px] border-b-purple-400">
+                <div class="text-4xl">👑</div>
+                <h2 class="text-2xl font-bold text-purple-700">Créer Room</h2>
+                <button id="btn-create" class="btn-game w-full py-5 bg-purple-500 text-white rounded-[1.5rem] font-bold text-xl shadow-[0_8px_0_0_#7e22ce]">C'EST PARTI !</button>
+            </div>
+
+            <!-- CARTE JOUEUR -->
+            <div class="bento-card p-8 flex flex-col items-center text-center space-y-5 border-b-[12px] border-b-amber-400">
+                <div class="text-4xl">⚡</div>
+                <div class="w-full space-y-3">
+                    <input type="text" id="roomInput" placeholder="CODE" class="w-full p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 text-center font-bold text-2xl uppercase tracking-widest outline-none focus:border-amber-400">
+                    <button id="btn-join" class="btn-game w-full py-5 bg-amber-400 text-amber-900 rounded-[1.5rem] font-bold text-xl shadow-[0_8px_0_0_#d97706]">REJOINDRE</button>
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-logout" class="btn-game px-6 py-2 bg-white/50 rounded-full text-xs font-bold text-gray-500 uppercase tracking-widest hover:text-rose-500">Se déconnecter</button>
     </div>
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
         import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            signInAnonymously, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            onAuthStateChanged, 
+            signOut,
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const modal = document.getElementById('auth-modal');
         const main = document.getElementById('main-content');
 
-        // GESTION AUTH
+        // Gestion de l'affichage selon l'état de connexion
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                modal.classList.add('hidden');
+                modal.style.display = 'none';
                 main.classList.remove('hidden');
             } else {
-                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
                 main.classList.add('hidden');
             }
         });
 
-        document.getElementById('login-anon').onclick = () => signInAnonymously(auth);
+        // ACTIONS BOUTONS AUTH
         document.getElementById('login-google').onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
+        
+        document.getElementById('login-anon').onclick = () => signInAnonymously(auth);
+
+        document.getElementById('login-email').onclick = async () => {
+            const email = prompt("Email :");
+            if(!email) return;
+            const pass = prompt("Mot de passe :");
+            if(!pass) return;
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (e) {
+                if(confirm("Compte non trouvé. Créer un nouveau compte ?")) {
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                }
+            }
+        };
+
         document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-        // GESTION ROOMS
+        // ACTIONS BOUTONS JEU
         document.getElementById('btn-create').onclick = async () => {
             const id = Math.floor(1000 + Math.random() * 9000).toString();
-            await set(ref(db, 'rooms/' + id), { state: 'waiting' });
+            await set(ref(db, 'rooms/' + id), { 
+                state: 'waiting', 
+                createdAt: Date.now() 
+            });
             window.location.href = `admin.html?room=${id}`;
         };
 
         document.getElementById('btn-join').onclick = async () => {
             const id = document.getElementById('roomInput').value.trim();
+            if(!id) return alert("Hé ! Tape un code ! 😊");
+            
             const snap = await get(ref(db, 'rooms/' + id));
-            if (snap.exists()) window.location.href = `player.html?room=${id}`;
-            else alert("Code introuvable ! 🕵️");
+            if (snap.exists()) {
+                window.location.href = `player.html?room=${id}`;
+            } else {
+                alert("Oups ! Code inconnu. 🧐");
+            }
         };
     </script>
 </body>
