@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"; // Ajouté
 
 const firebaseConfig = {
   apiKey: "AIzaSyAaFfaFxF9ZGkoRSbUUu3wMX91J5nLbiXU",
@@ -13,4 +14,5 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
+export const auth = getAuth(app); // Exporté pour index.html
 export const sanitize = (name) => name.replace(/[\.\$\#\[\]\/]/g, "_");
