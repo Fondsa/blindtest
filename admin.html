@@ -167,12 +167,13 @@
                 
                 div.innerText = track.name;
                 div.onclick = () => {
-                    selectedTrack = track;
-                    audio.src = track.file;
-                    document.getElementById('current-track-display').innerText = "Sélectionné : " + track.name;
-                    btnMain.disabled = false;
-                    renderMusicList(); // Refresh style
-                };
+    selectedTrack = track;
+    audio.src = track.file;
+    audio.load(); // FORCE le navigateur à charger le fichier
+    document.getElementById('current-track-display').innerText = "Prêt : " + track.name;
+    btnMain.disabled = false;
+    renderMusicList(); 
+};
                 listContainer.appendChild(div);
             });
         }
