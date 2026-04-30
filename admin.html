@@ -54,15 +54,15 @@
         // 2. TA BIBLIOTHÈQUE GITHUB
         const BASE_URL = "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/";
         const library = {
-            animes: {
-                "One Piece": [
-                    { 
-                        name: "Opening 26 - Uuuuus!", 
-                        file: BASE_URL + encodeURIComponent("One Piece - Opening 26 Uuuuus! 4K 60FPS CC-[AudioTrimmer.com].mp3")
-                    }
-                ]
+    animes: {
+        "One Piece": [
+            { 
+                name: "Opening 26", 
+                file: "https://raw.githubusercontent.com/Fondsa/blindtest/main/musiques/anime/OnePiece_op26.mp3"
             }
-        };
+        ]
+    }
+};
 
         // 3. VARIABLES GLOBALES
         const urlParams = new URLSearchParams(window.location.search);
@@ -134,15 +134,21 @@
                     div.className = "p-3 mb-2 bg-white border-2 border-transparent rounded-xl font-bold cursor-pointer hover:border-indigo-500 hover:text-indigo-600 transition-all text-left shadow-sm";
                     div.innerText = track.name;
                     div.onclick = () => {
-                        selectedTrack = track;
-                        audio.src = track.file;
-                        audio.load();
-                        document.getElementById('current-track-display').innerText = "PRÊT : " + track.name;
-                        btnMain.disabled = false;
-                        // On surligne la sélection
-                        document.querySelectorAll('#music-list-container div').forEach(d => d.classList.remove('border-indigo-500', 'bg-indigo-50'));
-                        div.classList.add('border-indigo-500', 'bg-indigo-50');
-                    };
+    selectedTrack = track;
+    
+    // On nettoie le lien au cas où
+    const cleanURL = track.file.trim();
+    console.log("Tentative de lecture de :", cleanURL);
+    
+    audio.src = cleanURL;
+    audio.load();
+    
+    document.getElementById('current-track-display').innerText = "PRÊT : " + track.name;
+    btnMain.disabled = false;
+
+    document.querySelectorAll('#music-list-container div').forEach(d => d.classList.remove('border-indigo-500', 'bg-indigo-50'));
+    div.classList.add('border-indigo-500', 'bg-indigo-50');
+};
                     listContainer.appendChild(div);
                 });
             }
