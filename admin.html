@@ -52,7 +52,16 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { ref, onValue, update, remove, get, onDisconnect, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const library = { animes: [{ name: "Naruto", file: "musiques/animes/naruto.mp3" }], disney: [] };
+        const library = { 
+            animes: [
+                { name: "Violet Evergarden - Op 1", file: "musiques/animes/[4K  60FPS] Violet Evergarden Opening Creditless-[AudioTrimmer.com].mp3"} 
+                { name: "One Piece - Op 26", file: "One Piece - Opening 26 Uuuuus! 4K 60FPS  CC-[AudioTrimmer.com].mp3" }
+                { name: "Chillin' in Another World With My Level 2 Super Cheat Skill Powers - Op 1", file: "4K-UHDChillin' in Another World with Level 2 Super Cheat Powers - Opening  Creditless  Lyrics-[AudioTrimmer.com].mp3" }
+        
+            ], 
+            disney: [
+                
+            ] };
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
         const roomRef = ref(db, 'rooms/' + roomId);
