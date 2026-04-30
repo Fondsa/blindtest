@@ -10,39 +10,37 @@
 </head>
 <body class="bg-indigo-600 text-white min-h-screen flex items-center justify-center p-4">
 
-    <!-- ECRAN CONNEXION -->
+    <!-- CONNEXION -->
     <div id="auth-section" class="bg-white text-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
         <h1 class="text-4xl mb-6 text-indigo-600 font-black italic">MUZIK !</h1>
         <div class="space-y-4">
             <button id="login-google" class="w-full py-4 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-all font-bold">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6"> Google
             </button>
-            <button id="login-anon" class="w-full py-4 bg-slate-700 text-white rounded-2xl hover:bg-slate-800 transition-all font-bold uppercase tracking-widest">Anonyme</button>
+            <button id="login-anon" class="w-full py-4 bg-slate-700 text-white rounded-2xl hover:bg-slate-800 transition-all font-bold uppercase tracking-widest text-sm">Mode Anonyme</button>
         </div>
     </div>
 
-    <!-- ECRAN PSEUDO -->
+    <!-- PSEUDO -->
     <div id="pseudo-section" class="hidden bg-white text-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
-        <h2 class="text-3xl mb-4 text-indigo-600 font-black">TON PSEUDO ?</h2>
-        <input id="display-name" type="text" placeholder="Ex: DJ-Panda" class="w-full p-4 mb-6 border-4 border-indigo-50 rounded-2xl outline-none focus:border-indigo-500 text-center text-xl uppercase font-bold">
-        <button id="save-pseudo" class="w-full py-4 bg-pink-500 text-white rounded-2xl shadow-[0_6px_0_0_#9d174d] active:shadow-none active:translate-y-1 transition-all font-bold text-xl uppercase">C'est parti !</button>
+        <h2 class="text-3xl mb-4 text-indigo-600 font-black uppercase">Ton Pseudo ?</h2>
+        <input id="display-name" type="text" placeholder="EX: PANDA_ROCKET" class="w-full p-4 mb-6 border-4 border-indigo-50 rounded-2xl outline-none focus:border-indigo-500 text-center text-xl uppercase font-bold text-indigo-600">
+        <button id="save-pseudo" class="w-full py-4 bg-pink-500 text-white rounded-2xl shadow-[0_6px_0_0_#9d174d] active:shadow-none active:translate-y-1 transition-all font-bold text-xl uppercase">Valider</button>
     </div>
 
-    <!-- ECRAN CHOIX (HEBERGER OU REJOINDRE) -->
+    <!-- CHOIX ROOM -->
     <div id="role-section" class="hidden bg-white text-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
-        <h2 class="text-2xl mb-8 text-indigo-600 font-bold">Salut, <span id="user-greeting" class="text-pink-500">...</span></h2>
-        <div class="space-y-10">
-            <!-- PARTIE HEBERGER -->
+        <h2 class="text-2xl mb-8 text-indigo-600 font-bold uppercase">Salut <span id="user-greeting" class="text-pink-500">...</span></h2>
+        <div class="space-y-8">
             <button id="btn-create" class="w-full py-6 bg-yellow-400 text-indigo-900 rounded-2xl font-black text-2xl shadow-[0_6px_0_0_#b45309] active:translate-y-1 active:shadow-none transition-all uppercase">HÉBERGER</button>
             
-            <!-- PARTIE REJOINDRE -->
             <div class="pt-6 border-t-2 border-gray-100">
-                <p class="text-gray-400 text-xs mb-3 uppercase font-black italic tracking-widest">Rejoindre un ami</p>
+                <p class="text-gray-400 text-[10px] mb-3 uppercase font-black tracking-[0.2em]">Ou rejoindre un ami</p>
                 <input id="room-input" type="text" placeholder="CODE" class="w-full p-4 mb-4 border-4 border-indigo-50 rounded-2xl text-center uppercase font-mono text-4xl outline-none focus:border-indigo-500 text-indigo-600 font-black tracking-widest">
                 <button id="btn-join" class="w-full py-4 bg-indigo-500 text-white rounded-2xl font-bold text-xl shadow-[0_6px_0_0_#3730a3] active:translate-y-1 active:shadow-none transition-all uppercase italic">REJOINDRE</button>
             </div>
         </div>
-        <button id="logout" class="mt-8 text-gray-300 hover:text-red-500 text-xs font-bold uppercase underline transition-colors">Déconnexion</button>
+        <button id="logout" class="mt-8 text-gray-300 hover:text-red-500 text-[10px] font-bold uppercase underline">Déconnexion</button>
     </div>
 
     <script type="module">
@@ -52,9 +50,9 @@
 
         const auth = getAuth();
         const provider = new GoogleAuthProvider();
-        const ui = { auth: document.getElementById('auth-section'), pseudo: document.getElementById('pseudo-section'), role: document.getElementById('role-section') };
+        const sections = { auth: document.getElementById('auth-section'), pseudo: document.getElementById('pseudo-section'), role: document.getElementById('role-section') };
 
-        function show(id) { Object.values(ui).forEach(s => s.classList.add('hidden')); ui[id].classList.remove('hidden'); }
+        function show(id) { Object.values(sections).forEach(s => s.classList.add('hidden')); sections[id].classList.remove('hidden'); }
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -78,19 +76,11 @@
             }
         };
 
-        // LE CŒUR DE TA QUESTION :
         const genID = () => Math.random().toString(36).substring(2, 7).toUpperCase();
-
-        // HEBERGER -> On crée l'ID et on l'envoie en paramètre URL
-        document.getElementById('btn-create').onclick = () => {
-            const newRoom = genID();
-            window.location.href = `admin.html?room=${newRoom}`;
-        };
-
-        // REJOINDRE -> On récupère ce que l'utilisateur a tapé
+        document.getElementById('btn-create').onclick = () => window.location.href = `admin.html?room=${genID()}`;
         document.getElementById('btn-join').onclick = () => {
             const code = document.getElementById('room-input').value.trim().toUpperCase();
-            if (code) { window.location.href = `player.html?room=${code}`; }
+            if (code) window.location.href = `player.html?room=${code}`;
         };
     </script>
 </body>
