@@ -3,16 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlindTest Party</title>
+    <title>Blind Test - Accueil</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <style>body { font-family: 'Fredoka One', cursive; }</style>
 </head>
-<body class="bg-indigo-600 text-white flex flex-col items-center justify-center min-h-screen">
-    <h1 class="text-5xl mb-12 drop-shadow-lg tracking-wider">BLIND TEST</h1>
-    <div class="space-y-6 flex flex-col w-64">
-        <a href="admin.html" class="bg-yellow-400 hover:bg-yellow-300 text-indigo-900 py-4 px-8 rounded-2xl text-center text-xl shadow-[0_6px_0_0_#b45309] active:shadow-none active:translate-y-1 transition-all">HÔTE</a>
-        <a href="player.html" class="bg-pink-500 hover:bg-pink-400 text-white py-4 px-8 rounded-2xl text-center text-xl shadow-[0_6px_0_0_#9d174d] active:shadow-none active:translate-y-1 transition-all">JOUEUR</a>
+<body class="bg-indigo-600 text-white min-h-screen flex items-center justify-center p-4">
+
+    <!-- ÉTAPE 1 : CONNEXION -->
+    <div id="auth-section" class="bg-white text-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
+        <h1 class="text-4xl mb-6 text-indigo-600">Bienvenue !</h1>
+        <div class="space-y-4">
+            <button id="login-google" class="w-full py-3 px-4 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-all font-bold">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5"> Continuer avec Google
+            </button>
+            <button id="login-anon" class="w-full py-3 px-4 bg-slate-700 text-white rounded-xl hover:bg-slate-800 transition-all font-bold">Jouer en Anonyme</button>
+        </div>
     </div>
+
+    <!-- ÉTAPE 2 : PSEUDO -->
+    <div id="pseudo-section" class="hidden bg-white text-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
+        <h2 class="text-3xl mb-4 text-indigo-600">Ton Pseudo ?</h2>
+        <input id="display-name" type="text" placeholder="Ex: MusiqueMaster" class="w-full p-4 mb-6 border-4 border-indigo-100 rounded-2xl outline-none focus:border-indigo-500 text-center text-xl">
+        <button id="save-pseudo" class="w-full py-4 bg-pink-500 text-white rounded-2xl shadow-[0_6px_0_0_#9d174d] active:shadow-none active:translate-y-1 transition-all font-bold text-xl uppercase">Valider</button>
+    </div>
+
+    <!-- ÉTAPE 3 : CHOIX DU RÔLE -->
+    <div id="role-section" class="hidden bg-white text-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
+        <h2 class="text-3xl mb-2 text-indigo-600">Prêt, <span id="user-greeting">...</span> ?</h2>
+        <p class="text-gray-500 mb-8">Que veux-tu faire ?</p>
+        <div class="grid grid-cols-1 gap-6">
+            <a href="admin.html" class="py-6 bg-yellow-400 text-indigo-900 rounded-2xl shadow-[0_6px_0_0_#b45309] active:shadow-none active:translate-y-1 transition-all font-bold text-2xl uppercase">Héberger</a>
+            <a href="player.html" class="py-6 bg-indigo-500 text-white rounded-2xl shadow-[0_6px_0_0_#3730a3] active:shadow-none active:translate-y-1 transition-all font-bold text-2xl uppercase">Rejoindre</a>
+        </div>
+        <button id="logout" class="mt-8 text-gray-400 hover:text-red-500 text-sm underline">Se déconnecter</button>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const auth = getAuth();
+        const provider = new GoogleAuthProvider();
+
+        // Éléments UI
+        const sections = { auth: document.getElementById('auth-section'), pseudo: document.getElementById('pseudo-section'), role: document.getElementById('role-section') };
+        
+        function showSection(id) {
+            Object.values(sections).forEach(s => s.classList.add('hidden'));
+            sections[id].classList.remove('hidden');
+        }
+
+        // 1. Gérer la connexion
+        document.getElementById('login-google').onclick = () => signInWithPopup(auth, provider);
+        document.getElementById('login-anon').onclick = () => signInAnonymously(auth);
+        document.getElementById('logout').onclick = () => signOut(auth);
+
+        // 2. Écouter l'état de l'utilisateur
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Vérifier si l'utilisateur a déjà un pseudo dans la DB
+                const userRef = ref(db, 'users/' + user.uid);
+                const snapshot = await get(userRef);
+                
+                if (snapshot.exists() && snapshot.val().displayName) {
+                    document.getElementById('user-greeting').innerText = snapshot.val().displayName;
+                    showSection('role');
+                } else {
+                    showSection('pseudo');
+                }
+            } else {
+                showSection('auth');
+            }
+        });
+
+        // 3. Sauvegarder le pseudo
+        document.getElementById('save-pseudo').onclick = async () => {
+            const name = document.getElementById('display-name').value;
+            const user = auth.currentUser;
+            if (name && user) {
+                await set(ref(db, 'users/' + user.uid), { displayName: name });
+                document.getElementById('user-greeting').innerText = name;
+                showSection('role');
+            }
+        };
+    </script>
 </body>
 </html>
