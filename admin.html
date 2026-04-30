@@ -9,40 +9,60 @@
     <style>body { font-family: 'Fredoka One', cursive; }</style>
 </head>
 <body class="bg-indigo-50 p-4 min-h-screen">
-    <div class="max-w-2xl mx-auto flex justify-between items-center mb-6">
-        <a href="index.html" class="bg-white px-4 py-2 rounded-xl shadow text-indigo-600 font-bold text-sm tracking-tight">← QUITTER</a>
-        <h2 class="text-indigo-900 font-black text-sm italic tracking-tighter">BLINDTEST PARTY</h2>
+    <div class="max-w-3xl mx-auto flex justify-between items-center mb-6">
+        <a href="index.html" class="bg-white px-4 py-2 rounded-xl shadow text-indigo-600 font-bold text-sm">← QUITTER</a>
+        <h2 class="text-indigo-900 font-black text-sm italic tracking-tighter uppercase">Blindtest Party : Régie</h2>
     </div>
 
-    <div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl border-4 border-indigo-500 overflow-hidden">
-        <div id="copy-container" class="bg-indigo-500 p-6 text-white text-center cursor-pointer hover:bg-indigo-600 transition-all">
-            <p class="text-[10px] uppercase opacity-70 tracking-[0.3em] font-bold">Code de la Room (copier)</p>
-            <h1 id="room-display" class="text-5xl font-black mt-1">-----</h1>
+    <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl border-4 border-indigo-500 overflow-hidden">
+        <!-- CODE ROOM -->
+        <div id="copy-container" class="bg-indigo-500 p-4 text-white text-center cursor-pointer hover:bg-indigo-600 transition-all">
+            <p class="text-[10px] uppercase opacity-70 tracking-[0.3em] font-bold">Code Room</p>
+            <h1 id="room-display" class="text-4xl font-black italic">-----</h1>
         </div>
 
-        <div class="p-8 space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <select id="theme-select" class="w-full p-4 bg-indigo-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none">
-                    <option value="">-- THÈME --</option>
-                    <option value="animes">ANIMES</option>
-                    <option value="disney">DISNEY</option>
-                </select>
-                <select id="music-select" class="w-full p-4 bg-indigo-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none disabled:opacity-30" disabled></select>
+        <div class="p-6 space-y-6">
+            <!-- FILTRES DE SELECTION -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="text-[10px] uppercase text-gray-400 font-black mb-1 block">1. Catégorie</label>
+                    <select id="theme-select" class="w-full p-3 bg-indigo-50 rounded-xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none">
+                        <option value="">-- TOUT --</option>
+                        <option value="animes">🇯🇵 ANIMES</option>
+                        <option value="disney">🏰 DISNEY</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] uppercase text-gray-400 font-black mb-1 block">2. Série / Film</label>
+                    <select id="series-select" class="w-full p-3 bg-indigo-50 rounded-xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none disabled:opacity-30" disabled>
+                        <option value="">-- CHOISIR --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] uppercase text-gray-400 font-black mb-1 block">3. Recherche titre</label>
+                    <input id="search-bar" type="text" placeholder="Ex: Opening 1..." class="w-full p-3 bg-indigo-50 rounded-xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none">
+                </div>
+            </div>
+
+            <!-- LISTE DES MUSIQUES -->
+            <div class="bg-indigo-50 rounded-2xl p-2 max-h-60 overflow-y-auto border-2 border-indigo-100" id="music-list-container">
+                <p class="text-center py-10 text-gray-400 text-sm italic">Sélectionne une catégorie pour voir les titres</p>
             </div>
 
             <!-- CONTROLES SON -->
-            <div class="flex flex-col gap-4">
-                <button id="btn-main-play" class="w-full bg-green-500 text-white py-6 rounded-2xl shadow-[0_6px_0_0_#16a34a] active:translate-y-1 active:shadow-none transition-all text-2xl font-black uppercase italic tracking-widest">Lancer</button>
+            <div class="flex flex-col gap-3 pt-4 border-t-2 border-gray-50">
+                <div id="current-track-display" class="text-center text-indigo-600 font-black text-sm uppercase truncate px-4 mb-2">Aucun titre sélectionné</div>
+                <button id="btn-main-play" class="w-full bg-green-500 text-white py-5 rounded-2xl shadow-[0_6px_0_0_#16a34a] active:translate-y-1 active:shadow-none transition-all text-xl font-black uppercase italic disabled:opacity-50" disabled>Lancer la musique</button>
                 <div class="flex gap-4">
-                    <button id="btn-pause" class="hidden flex-1 bg-yellow-400 text-indigo-900 py-4 rounded-2xl shadow-[0_4px_0_0_#b45309] active:translate-y-1 active:shadow-none transition-all font-black uppercase">Pause</button>
-                    <button id="btn-reset" class="flex-1 bg-red-500 text-white py-4 rounded-2xl shadow-[0_4px_0_0_#dc2626] active:translate-y-1 active:shadow-none transition-all font-black uppercase">Réinitialiser</button>
+                    <button id="btn-pause" class="hidden flex-1 bg-yellow-400 text-indigo-900 py-4 rounded-xl shadow-[0_4px_0_0_#b45309] active:translate-y-1 active:shadow-none transition-all font-black uppercase text-sm">Pause</button>
+                    <button id="btn-reset" class="flex-1 bg-red-500 text-white py-4 rounded-xl shadow-[0_4px_0_0_#dc2626] active:translate-y-1 active:shadow-none transition-all font-black uppercase text-sm">Reset Manche</button>
                 </div>
             </div>
 
             <!-- ZONE BUZZERS -->
-            <div id="buzz-zone" class="hidden space-y-3 pt-4 border-t-2 border-gray-50">
-                <p class="text-center text-[10px] font-black text-gray-300 uppercase tracking-[0.4em]">File d'attente des buzzers</p>
-                <div id="buzz-list" class="space-y-3"></div>
+            <div id="buzz-zone" class="hidden space-y-3 pt-4 border-t-2 border-gray-100">
+                <p class="text-center text-[10px] font-black text-gray-300 uppercase tracking-[0.4em]">Ordre des buzzers</p>
+                <div id="buzz-list" class="space-y-2"></div>
             </div>
         </div>
     </div>
@@ -52,21 +72,35 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { ref, onValue, update, remove, get, onDisconnect, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const library = { 
-            animes: [
-                { name: "Violet Evergarden - Op 1", file: "musiques/animes/[4K  60FPS] Violet Evergarden Opening Creditless-[AudioTrimmer.com].mp3"} 
-                { name: "One Piece - Op 26", file: "One Piece - Opening 26 Uuuuus! 4K 60FPS  CC-[AudioTrimmer.com].mp3" }
-                { name: "Chillin' in Another World With My Level 2 Super Cheat Skill Powers - Op 1", file: "4K-UHDChillin' in Another World with Level 2 Super Cheat Powers - Opening  Creditless  Lyrics-[AudioTrimmer.com].mp3" }
-        
-            ], 
-            disney: [
-                
-            ] };
+        // STRUCTURE DE TA BIBLIOTHÈQUE
+        const library = {
+            animes: {
+                "One Piece": [
+                    { name: "Opening 1 - We Are!", file: "musiques/animes/op1.mp3" },
+                    { name: "Opening 2 - Believe", file: "musiques/animes/op2.mp3" }
+                ],
+                "Naruto": [
+                    { name: "Opening 1 - Rocks", file: "musiques/animes/naruto-op1.mp3" },
+                    { name: "Opening 5 - Seishun Kyousoukyoku", file: "musiques/animes/naruto-op5.mp3" }
+                ]
+            },
+            disney: {
+                "Le Roi Lion": [
+                    { name: "L'histoire de la vie", file: "musiques/disney/lion-king-1.mp3" },
+                    { name: "Je voudrais déjà être roi", file: "musiques/disney/lion-king-2.mp3" }
+                ],
+                "Mulan": [
+                    { name: "Comme un homme", file: "musiques/disney/mulan-1.mp3" }
+                ]
+            }
+        };
+
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
         const roomRef = ref(db, 'rooms/' + roomId);
         const countRef = ref(db, 'rooms/' + roomId + '/playerCount');
         const audio = new Audio();
+        let selectedTrack = null;
 
         if(!roomId) window.location.href = "index.html";
         document.getElementById('room-display').innerText = roomId;
@@ -74,71 +108,100 @@
         update(roomRef, { state: 'waiting', playerCount: increment(1), buzzList: null });
         onDisconnect(countRef).set(increment(-1));
 
-        // Auto-cleanup 2 min
-        onValue(countRef, (snap) => {
-            if ((snap.val() || 0) <= 0) {
-                setTimeout(async () => {
-                    const check = await get(countRef);
-                    if ((check.val() || 0) <= 0) remove(roomRef);
-                }, 120000); 
-            }
-        });
-
-        // Logique UI Musique
-        document.getElementById('theme-select').onchange = (e) => {
-            const tracks = library[e.target.value] || [];
-            const s = document.getElementById('music-select');
-            s.disabled = tracks.length === 0;
-            s.innerHTML = '<option value="">-- CHOIX DU TITRE --</option>' + tracks.map(t => `<option value="${t.file}">${t.name}</option>`).join('');
-        };
-        document.getElementById('music-select').onchange = (e) => { 
-            audio.src = e.target.value; 
-            resetUI();
-        };
-
+        // ELEMENTS UI
+        const themeSelect = document.getElementById('theme-select');
+        const seriesSelect = document.getElementById('series-select');
+        const searchBar = document.getElementById('search-bar');
+        const listContainer = document.getElementById('music-list-container');
         const btnMain = document.getElementById('btn-main-play');
         const btnPause = document.getElementById('btn-pause');
 
-        function resetUI() {
-            btnMain.innerText = "Lancer";
-            btnMain.classList.replace('bg-blue-500', 'bg-green-500');
-            btnPause.classList.add('hidden');
+        // 1. CHANGER DE THÈME (ANIMES / DISNEY)
+        themeSelect.onchange = () => {
+            const theme = themeSelect.value;
+            seriesSelect.innerHTML = '<option value="">-- CHOISIR --</option>';
+            if(theme) {
+                seriesSelect.disabled = false;
+                Object.keys(library[theme]).forEach(series => {
+                    seriesSelect.innerHTML += `<option value="${series}">${series}</option>`;
+                });
+            } else {
+                seriesSelect.disabled = true;
+            }
+            renderMusicList();
+        };
+
+        // 2. CHANGER DE SÉRIE OU RECHERCHER
+        seriesSelect.onchange = renderMusicList;
+        searchBar.oninput = renderMusicList;
+
+        function renderMusicList() {
+            const theme = themeSelect.value;
+            const series = seriesSelect.value;
+            const search = searchBar.value.toLowerCase();
+            listContainer.innerHTML = "";
+
+            if (!theme) return;
+
+            let tracksToShow = [];
+            
+            // Si une série est choisie, on prend ses musiques, sinon on prend tout le thème
+            if (series) {
+                tracksToShow = library[theme][series];
+            } else {
+                Object.values(library[theme]).forEach(t => tracksToShow = tracksToShow.concat(t));
+            }
+
+            // Filtrer par recherche
+            const filtered = tracksToShow.filter(t => t.name.toLowerCase().includes(search));
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = '<p class="text-center py-4 text-gray-400">Aucun titre trouvé</p>';
+                return;
+            }
+
+            filtered.forEach(track => {
+                const div = document.createElement('div');
+                div.className = "p-3 hover:bg-indigo-500 hover:text-white cursor-pointer rounded-xl font-bold text-sm transition-all mb-1 flex justify-between items-center bg-white border border-transparent";
+                if(selectedTrack?.file === track.file) div.className += " border-indigo-500 bg-indigo-50 text-indigo-600";
+                
+                div.innerText = track.name;
+                div.onclick = () => {
+                    selectedTrack = track;
+                    audio.src = track.file;
+                    document.getElementById('current-track-display').innerText = "Sélectionné : " + track.name;
+                    btnMain.disabled = false;
+                    renderMusicList(); // Refresh style
+                };
+                listContainer.appendChild(div);
+            });
         }
 
-        // Action principale (Lancer / Reprendre)
+        // CONTROLES AUDIO
         btnMain.onclick = () => {
             if (audio.paused) {
                 audio.play();
-                update(roomRef, { state: 'playing' });
-                btnMain.innerText = "En cours...";
+                update(roomRef, { state: 'playing', buzzList: null });
+                btnMain.innerText = "MUSIQUE EN COURS...";
                 btnMain.classList.replace('bg-green-500', 'bg-blue-500');
                 btnPause.classList.remove('hidden');
-                btnPause.innerText = "Mettre en Pause";
             }
         };
 
-        // Bouton Pause dédié
         btnPause.onclick = () => {
-            if (!audio.paused) {
-                audio.pause();
-                btnMain.innerText = "Reprendre le son";
-                btnMain.classList.replace('bg-blue-500', 'bg-green-500');
-                btnPause.innerText = "En pause";
-            } else {
-                audio.play();
-                btnMain.innerText = "En cours...";
-                btnMain.classList.replace('bg-green-500', 'bg-blue-500');
-                btnPause.innerText = "Mettre en Pause";
-            }
+            if (audio.paused) { audio.play(); btnPause.innerText = "Pause"; }
+            else { audio.pause(); btnPause.innerText = "Reprendre"; }
         };
 
         document.getElementById('btn-reset').onclick = () => {
             update(roomRef, { state: 'waiting', buzzList: null });
-            audio.pause();
-            audio.currentTime = 0;
-            resetUI();
+            audio.pause(); audio.currentTime = 0;
+            btnMain.innerText = "Relancer la manche";
+            btnMain.classList.replace('bg-blue-500', 'bg-green-500');
+            btnPause.classList.add('hidden');
         };
 
+        // SURVEILLANCE BUZZERS
         onValue(roomRef, (snap) => {
             const data = snap.val();
             const listDiv = document.getElementById('buzz-list');
@@ -148,22 +211,19 @@
                 zone.classList.remove('hidden');
                 const sorted = Object.values(data.buzzList).sort((a, b) => a.time - b.time);
                 listDiv.innerHTML = sorted.map((p, i) => `
-                    <div class="${i === 0 ? 'bg-yellow-400 text-indigo-900 border-4 border-yellow-500' : 'bg-gray-100 text-gray-500'} p-4 rounded-2xl flex justify-between items-center transition-all">
-                        <span class="font-black text-xl uppercase italic">${i + 1}. ${p.name}</span>
-                        <span class="text-[10px] font-bold opacity-50">${i === 0 ? 'FASTEST' : '+'+((p.time - sorted[0].time)/1000).toFixed(2)+'s'}</span>
+                    <div class="${i === 0 ? 'bg-yellow-400 border-yellow-600 border-2' : 'bg-gray-100'} p-3 rounded-xl flex justify-between items-center">
+                        <span class="font-black uppercase italic text-sm">${i + 1}. ${p.name}</span>
+                        <span class="text-[9px] font-bold opacity-40">${i === 0 ? 'TOP' : '+'+((p.time - sorted[0].time)/1000).toFixed(2)+'s'}</span>
                     </div>
                 `).join('');
 
-                // On met en pause au premier buzz, mais on permet à l'host de relancer après
                 if (sorted.length === 1 && data.state === 'playing') {
                     audio.pause();
                     update(roomRef, { state: 'buzzed' });
-                    btnMain.innerText = "Interroger (Pause)";
+                    btnMain.innerText = "Relancer après réponse";
                     btnMain.classList.replace('bg-blue-500', 'bg-green-500');
                 }
-            } else {
-                zone.classList.add('hidden');
-            }
+            } else { zone.classList.add('hidden'); }
         });
 
         document.getElementById('copy-container').onclick = () => { navigator.clipboard.writeText(roomId); alert("Code copié !"); };
