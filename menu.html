@@ -2,135 +2,173 @@
 <html lang="fr" class="">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu - Blindtest Party 🎶</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Menu - Blindtest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
+        /* 🚫 Bloquer le scroll et fixer la hauteur */
         body { 
             font-family: 'Fredoka', sans-serif; 
-            background: linear-gradient(-45deg, #FFDEE9, #B5FFFC, #f0f4f8, #fdfcfb);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            min-height: 100dvh; overflow-x: hidden;
-            transition: background 0.3s;
-        }
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            margin: 0; padding: 0; 
+            height: 100dvh; 
+            overflow: hidden; 
+            display: flex; flex-direction: column; 
         }
 
-        .dark body { background: #0f172a; background-image: none; }
+        /* ☁️ LE FOND ET LES NUAGES */
+        #bg-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1;
+            background-color: #ffffff; /* Fond blanc par défaut */
+            transition: background-color 0.5s ease;
+            overflow: hidden;
+        }
+        .dark #bg-container {
+            background-color: #0f172a; /* Fond noir en mode sombre */
+        }
 
+        .cloud {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px); /* L'effet nuage/pastel */
+            opacity: 0.7;
+            animation: floatClouds 15s infinite alternate ease-in-out;
+        }
+
+        /* Couleurs pastel des nuages */
+        .cloud-1 { background: #ffe4e6; width: 50vw; height: 50vw; top: -10%; left: -10%; }
+        .cloud-2 { background: #e0f2fe; width: 60vw; height: 60vw; bottom: -20%; right: -10%; animation-delay: -5s; }
+        .cloud-3 { background: #dcfce7; width: 40vw; height: 40vw; top: 30%; left: 30%; animation-delay: -10s; }
+        .cloud-4 { background: #f3e8ff; width: 50vw; height: 50vw; bottom: 10%; left: -20%; animation-delay: -7s; }
+
+        @keyframes floatClouds {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(15%, 15%) scale(1.1); }
+        }
+
+        /* 🍱 BENTO CARDS COMPACTES */
         .bento-card {
-            background: rgba(255, 255, 255, 0.85);
-            border-radius: 32px; border: 4px solid #ffffff;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 24px; 
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            backdrop-filter: blur(12px);
+            transition: transform 0.2s;
         }
-        .bento-card:hover { transform: translateY(-5px); }
-        .dark .bento-card { background: rgba(30, 41, 59, 0.9); border-color: #334155; color: white; }
-
-        .floating-title {
-            animation: floating 3s ease-in-out infinite;
-            display: inline-block;
-        }
-        @keyframes floating {
-            0%, 100% { transform: translateY(0px) rotate(-1deg); }
-            50% { transform: translateY(-15px) rotate(1deg); }
+        .bento-card:active { transform: scale(0.95); }
+        .dark .bento-card { 
+            background: rgba(30, 41, 59, 0.5); 
+            border-color: rgba(255, 255, 255, 0.1); 
+            color: white; 
         }
 
-        #drawer { transform: translateX(100%); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 💫 ANIMATION TITRE */
+        .floating-title { animation: bounce 3s ease-in-out infinite; }
+        @keyframes bounce { 
+            0%, 100% { transform: translateY(0); } 
+            50% { transform: translateY(-8px); } 
+        }
+
+        /* 🗄️ DRAWER */
+        #drawer { transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #drawer.open { transform: translateX(0); }
-        
-        .pastel-rose { background-color: #ffe4e6; color: #fb7185; }
-        .pastel-bleu { background-color: #e0f2fe; color: #38bdf8; }
-        .pastel-vert { background-color: #f0fdf4; color: #4ade80; }
     </style>
 </head>
-<body class="p-6 flex flex-col items-center">
+<body>
 
-    <!-- BARRE HAUTE -->
-    <div class="w-full max-w-4xl flex justify-end mb-4">
-        <button id="open-drawer" class="p-4 bento-card text-2xl">☰</button>
+    <!-- ARRIÈRE-PLAN NUAGES (Ne change jamais de couleur, seul le fond bascule) -->
+    <div id="bg-container">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="cloud cloud-4"></div>
     </div>
 
-    <!-- DRAWER -->
-    <div id="drawer" class="fixed top-0 right-0 h-full w-72 bg-white dark:bg-slate-800 z-50 p-8 flex flex-col shadow-2xl">
-        <button id="close-drawer" class="self-end text-2xl dark:text-white mb-8">✕</button>
-        <h2 class="text-xl font-bold mb-6 dark:text-white uppercase tracking-widest">Réglages</h2>
+    <!-- BOUTON MENU HAUT DROITE -->
+    <div class="absolute top-4 right-4 z-20">
+        <button id="open-drawer" class="w-12 h-12 bento-card flex items-center justify-center text-xl font-bold dark:text-white">☰</button>
+    </div>
+
+    <!-- DRAWER CACHÉ -->
+    <div id="drawer" class="fixed top-0 right-0 h-full w-64 bento-card z-50 p-6 flex flex-col shadow-2xl !bg-white/90 dark:!bg-slate-800/90 rounded-none border-l-2">
+        <button id="close-drawer" class="self-end text-xl mb-6 dark:text-white">✕</button>
+        <h2 class="text-lg font-bold mb-4 dark:text-white uppercase">Menu</h2>
         
-        <div class="space-y-4">
-            <button id="toggle-dark" class="w-full p-4 bg-gray-100 dark:bg-slate-700 rounded-2xl font-bold flex items-center justify-between dark:text-white">
+        <div class="space-y-3">
+            <button id="toggle-dark" class="w-full p-3 bg-gray-100 dark:bg-slate-700 rounded-xl font-bold flex justify-between items-center dark:text-white">
                 <span>Mode Nuit</span> <span id="dark-icon">🌙</span>
             </button>
-            <a href="Admin.html" id="admin-btn" class="hidden w-full p-4 bg-amber-100 text-amber-700 rounded-2xl font-bold block text-center border-2 border-amber-200">Admin Panel 🛠️</a>
+            <a href="Admin.html" id="admin-btn" class="hidden w-full p-3 bg-amber-100 text-amber-700 rounded-xl font-bold text-center">Admin 🛠️</a>
         </div>
-
-        <button id="btn-logout" class="mt-auto w-full p-4 bg-rose-500 text-white rounded-2xl font-bold shadow-[0_4px_0_0_#be123c]">DÉCONNEXION 🚪</button>
+        <button id="btn-logout" class="mt-auto w-full p-3 bg-rose-500 text-white rounded-xl font-bold">DÉCONNEXION 🚪</button>
     </div>
 
-    <!-- TITRE -->
-    <div class="text-center mb-10 mt-4">
-        <h1 class="text-6xl md:text-8xl font-black text-gray-800 dark:text-white tracking-tighter floating-title">
-            BLIND<span class="text-rose-400">TEST</span>
-        </h1>
-        <p class="text-gray-500 dark:text-gray-300 font-bold uppercase tracking-[0.3em] mt-2">Party Edition</p>
-    </div>
-
-    <!-- GRILLE BENTO -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+    <!-- CONTENU PRINCIPAL (Centré verticalement et horizontalement) -->
+    <main class="relative z-10 flex flex-col items-center justify-center h-full w-full p-4">
         
-        <!-- Créer une Room -->
-        <button onclick="createRoom()" class="bento-card pastel-rose md:col-span-2 flex flex-col items-center justify-center p-10">
-            <span class="text-5xl mb-4">👑</span>
-            <span class="text-2xl font-black">CRÉER UNE ROOM</span>
-        </button>
-
-        <!-- Rejoindre -->
-        <div class="bento-card pastel-bleu flex flex-col items-center p-8 space-y-4">
-            <span class="text-4xl">🕹️</span>
-            <span class="text-xl font-bold text-center">REJOINDRE</span>
-            <div class="flex gap-2 w-full mt-2">
-                <input type="text" id="room-code" placeholder="CODE" maxlength="4" class="w-full p-3 rounded-xl border-none outline-none text-center font-bold text-gray-600 bg-white/50">
-                <button onclick="joinRoom()" class="bg-sky-400 text-white px-4 rounded-xl font-bold">GO</button>
-            </div>
+        <!-- TITRE -->
+        <div class="text-center mb-6">
+            <h1 class="text-5xl md:text-7xl font-black text-gray-800 dark:text-white tracking-tighter floating-title">
+                BLIND<span class="text-rose-400">TEST</span>
+            </h1>
         </div>
 
-        <!-- Import -->
-        <button onclick="window.location.href='Upload.html'" class="bento-card pastel-vert flex flex-col items-center justify-center p-8">
-            <span class="text-4xl mb-2">🎶</span>
-            <span class="text-xl font-bold">BIBLIOTHÈQUE</span>
-        </button>
+        <!-- GRILLE BENTO (Ultra compacte pour éviter le scroll) -->
+        <div class="grid grid-cols-2 gap-3 w-full max-w-md">
+            
+            <!-- CRÉER UNE ROOM (Prend toute la largeur) -->
+            <button onclick="createRoom()" class="col-span-2 bento-card flex flex-col items-center justify-center py-6 md:py-8 text-rose-500 dark:text-rose-300">
+                <span class="text-4xl mb-2">👑</span>
+                <span class="text-xl font-black">CRÉER UNE ROOM</span>
+            </button>
 
-    </div>
+            <!-- REJOINDRE (Moitié gauche) -->
+            <div class="col-span-1 bento-card flex flex-col items-center p-4 text-sky-500 dark:text-sky-300">
+                <span class="text-3xl mb-1">🕹️</span>
+                <span class="text-sm font-bold mb-2">REJOINDRE</span>
+                <input type="text" id="room-code" placeholder="AZERT" maxlength="5" class="w-full p-2 rounded-lg border-none outline-none text-center font-bold text-gray-700 bg-white/70 dark:bg-slate-900/50 uppercase text-sm mb-2">
+                <button onclick="joinRoom()" class="w-full bg-sky-400 text-white py-1 rounded-lg font-bold text-sm">GO</button>
+            </div>
+
+            <!-- BIBLIOTHÈQUE (Moitié droite) -->
+            <button onclick="window.location.href='Upload.html'" class="col-span-1 bento-card flex flex-col items-center justify-center p-4 text-emerald-500 dark:text-emerald-300">
+                <span class="text-4xl mb-2">🎶</span>
+                <span class="text-sm font-bold text-center">BIBLIOTHÈQUE</span>
+            </button>
+
+        </div>
+    </main>
 
     <script type="module">
-        import { auth } from './firebase-config.js';
+        import { db, auth } from './firebase-config.js';
+        import { ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         onAuthStateChanged(auth, (user) => {
             if (!user) window.location.href = 'index.html';
-            // Email de l'admin à changer ici
-            if(user.email === "tonadmin@mail.com") document.getElementById('admin-btn').classList.remove('hidden');
+            if(user && user.email === "tonadmin@mail.com") document.getElementById('admin-btn').classList.remove('hidden');
         });
 
-        // Fonctions de Room
-        window.createRoom = () => {
-            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+        // CRÉATION DE LA ROOM (5 Lettres)
+        window.createRoom = async () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let code = '';
+            for (let i = 0; i < 5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+
+            const roomRef = ref(db, `rooms/${code}`);
+            await set(roomRef, { state: 'waiting', host: auth.currentUser.uid, createdAt: Date.now(), players: {} });
             window.location.href = `host.html?room=${code}`;
         };
 
+        // REJOINDRE
         window.joinRoom = () => {
             const code = document.getElementById('room-code').value.toUpperCase();
-            if(code.length === 4) window.location.href = `player.html?room=${code}`;
-            else alert("Entre un code de 4 lettres !");
+            if(code.length === 5) window.location.href = `player.html?room=${code}`;
+            else alert("Entre un code de 5 lettres (ex: AZERT) !");
         };
 
-        // Drawer & Dark Mode
+        // GESTION DU TIROIR & THEME NUIT
         const drw = document.getElementById('drawer');
         document.getElementById('open-drawer').onclick = () => drw.classList.add('open');
         document.getElementById('close-drawer').onclick = () => drw.classList.remove('open');
