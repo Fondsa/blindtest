@@ -17,11 +17,9 @@
             background-color: #ffffff;
             transition: background-color 0.3s ease;
         }
-        /* Mode sombre : Fond noir pur, pas de nuages */
         .dark body { background-color: #000000; }
         .dark #bg-container { display: none; }
 
-        /* ☁️ NUAGES PASTEL - VISIBILITÉ ÉQUILIBRÉE */
         #bg-container {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1;
             overflow: hidden;
@@ -29,12 +27,11 @@
         .cloud {
             position: absolute;
             border-radius: 50%;
-            filter: blur(70px); /* Entre-deux : plus net que 80px, moins que 60px */
-            opacity: 0.6; /* Visibilité ajustée */
+            filter: blur(70px);
+            opacity: 0.6;
             animation: floatClouds 15s infinite alternate ease-in-out;
         }
 
-        /* Couleurs Pastel Douces */
         .cloud-pink { background: #ffdce0; width: 65vw; height: 65vw; top: -15%; left: -10%; }
         .cloud-blue { background: #dcf2ff; width: 75vw; height: 75vw; bottom: -20%; right: -5%; animation-delay: -4s; }
         .cloud-green { background: #dcffe4; width: 55vw; height: 55vw; top: 25%; left: 15%; animation-delay: -7s; }
@@ -44,26 +41,23 @@
             100% { transform: translate(8%, 8%) scale(1.05); }
         }
 
-        /* 🎮 BOUTONS PHYSIQUES PASTEL */
         .btn-game {
             border-radius: 28px;
             color: white;
             font-weight: 700;
             transition: all 0.2s ease;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-bottom: 6px solid rgba(0,0,0,0.15); /* Ombre physique */
+            border-bottom: 6px solid rgba(0,0,0,0.15);
             text-shadow: 0px 1px 2px rgba(0,0,0,0.1);
         }
         .btn-game:active { transform: translateY(4px); border-bottom-width: 2px; }
 
-        /* Couleurs boutons alignées sur les nuages */
-        .btn-host { background-color: #ff9aa2; }  /* Pastel Rouge/Rose */
-        .btn-play { background-color: #a0c4ff; }  /* Pastel Bleu */
-        .btn-import { background-color: #b9fbc0; } /* Pastel Vert */
+        .btn-host { background-color: #ff9aa2; }
+        .btn-play { background-color: #a0c4ff; }
+        .btn-import { background-color: #b9fbc0; }
 
         .dark .btn-game { border-bottom-color: rgba(255,255,255,0.1); }
 
-        /* 🍱 BENTO CARDS */
         .bento-card {
             background: rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(10px);
@@ -113,7 +107,7 @@
 
         <div class="grid grid-cols-2 gap-4 w-full max-w-lg">
             <!-- CRÉER UNE ROOM -->
-            <button onclick="createRoom()" class="btn-game btn-host col-span-2 py-8">
+            <button id="btn-create" class="btn-game btn-host col-span-2 py-8">
                 <span class="text-5xl mb-2">👑</span>
                 <span class="text-2xl font-black italic">CRÉER UNE ROOM</span>
             </button>
@@ -123,7 +117,7 @@
                 <span class="text-3xl mb-1">🕹️</span>
                 <span class="text-sm font-black mb-3 text-white/90 uppercase">Rejoindre</span>
                 <input type="text" id="room-code" placeholder="AZERT" maxlength="5" class="w-full p-2 rounded-xl border-none outline-none text-center font-bold text-gray-800 bg-white/90 uppercase text-sm mb-3">
-                <button onclick="joinRoom()" class="w-full bg-white text-blue-400 py-2 rounded-xl font-black text-xs hover:bg-gray-50 transition-colors">GO</button>
+                <button id="btn-go" class="w-full bg-white text-blue-400 py-2 rounded-xl font-black text-xs hover:bg-gray-50 transition-colors">GO</button>
             </div>
 
             <!-- BIBLIOTHÈQUE -->
@@ -136,29 +130,51 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         onAuthStateChanged(auth, (user) => {
-            if (!user) window.location.href = 'index.html';
-            if(user && user.email === "tonadmin@mail.com") document.getElementById('admin-btn').classList.remove('hidden');
+            if (!user) {
+                window.location.href = 'index.html';
+            } else {
+                // Stocker l'ID pour player.html
+                localStorage.setItem('playerId', user.uid);
+                if(user.email === "tonadmin@mail.com") document.getElementById('admin-btn').classList.remove('hidden');
+            }
         });
 
-        window.createRoom = async () => {
+        // CRÉER UNE ROOM
+        document.getElementById('btn-create').onclick = async () => {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             let code = '';
             for (let i = 0; i < 5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            
             const roomRef = ref(db, `rooms/${code}`);
-            await set(roomRef, { state: 'waiting', host: auth.currentUser.uid, createdAt: Date.now() });
+            await set(roomRef, { 
+                state: 'waiting', 
+                host: auth.currentUser.uid, 
+                createdAt: Date.now() 
+            });
             window.location.href = `host.html?room=${code}`;
         };
 
-        window.joinRoom = () => {
-            const code = document.getElementById('room-code').value.toUpperCase();
-            if(code.length === 5) window.location.href = `player.html?room=${code}`;
-            else alert("Code à 5 lettres !");
+        // REJOINDRE UNE ROOM
+        document.getElementById('btn-go').onclick = (e) => {
+            e.preventDefault();
+            const code = document.getElementById('room-code').value.toUpperCase().trim();
+            
+            if(code.length === 5) {
+                // On s'assure que le playerId est bien là avant de partir
+                if(auth.currentUser) {
+                    localStorage.setItem('playerId', auth.currentUser.uid);
+                    window.location.href = `player.html?room=${code}`;
+                }
+            } else {
+                alert("Code à 5 lettres !");
+            }
         };
 
+        // DRAWER & DARK MODE
         const drw = document.getElementById('drawer');
         document.getElementById('open-drawer').onclick = () => drw.classList.add('open');
         document.getElementById('close-drawer').onclick = () => drw.classList.remove('open');
@@ -169,6 +185,7 @@
             document.getElementById('dark-icon').innerText = isDark ? "☀️" : "🌙";
             localStorage.setItem('dark', isDark);
         };
+
         if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
         document.getElementById('btn-logout').onclick = () => signOut(auth);
     </script>
