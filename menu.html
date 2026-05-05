@@ -20,6 +20,7 @@
         .dark body { background-color: #000000; }
         .dark #bg-container { display: none; }
 
+        /* ☁️ NUAGES PASTEL */
         #bg-container {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1;
             overflow: hidden;
@@ -31,7 +32,6 @@
             opacity: 0.6;
             animation: floatClouds 15s infinite alternate ease-in-out;
         }
-
         .cloud-pink { background: #ffdce0; width: 65vw; height: 65vw; top: -15%; left: -10%; }
         .cloud-blue { background: #dcf2ff; width: 75vw; height: 75vw; bottom: -20%; right: -5%; animation-delay: -4s; }
         .cloud-green { background: #dcffe4; width: 55vw; height: 55vw; top: 25%; left: 15%; animation-delay: -7s; }
@@ -41,6 +41,7 @@
             100% { transform: translate(8%, 8%) scale(1.05); }
         }
 
+        /* 🎮 BOUTONS PHYSIQUES */
         .btn-game {
             border-radius: 28px;
             color: white;
@@ -88,13 +89,20 @@
     <!-- Drawer -->
     <div id="drawer" class="fixed top-0 right-0 h-full w-64 bg-white/95 dark:bg-black/95 z-50 p-6 flex flex-col shadow-2xl">
         <button id="close-drawer" class="self-end text-xl mb-6 dark:text-white">✕</button>
+        
         <div class="space-y-4">
-            <button id="toggle-dark" class="w-full p-4 bg-gray-100 dark:bg-zinc-900 rounded-2xl font-bold flex justify-between items-center dark:text-white">
+            <!-- Thème -->
+            <button id="toggle-dark" class="w-full p-4 bg-gray-100 dark:bg-zinc-900 rounded-2xl font-bold flex justify-between items-center dark:text-white text-sm">
                 <span>Mode Nuit</span> <span id="dark-icon">🌙</span>
             </button>
-            <a href="Admin.html" id="admin-btn" class="hidden w-full p-4 bg-amber-200 text-amber-800 rounded-2xl font-bold text-center">ADMIN 🛠️</a>
+            
+            <!-- Administration (Masqué par défaut) -->
+            <button id="admin-link" class="hidden w-full p-4 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl font-bold flex items-center justify-center gap-2 border-2 border-amber-200 dark:border-amber-800 text-sm">
+                ADMINISTRATION 🛠️
+            </button>
         </div>
-        <button id="btn-logout" class="mt-auto w-full p-4 bg-zinc-200 dark:bg-zinc-800 dark:text-white rounded-2xl font-bold">DÉCONNEXION 🚪</button>
+
+        <button id="btn-logout" class="mt-auto w-full p-4 bg-zinc-200 dark:bg-zinc-800 dark:text-white rounded-2xl font-bold text-sm">DÉCONNEXION 🚪</button>
     </div>
 
     <main class="relative z-10 flex flex-col items-center justify-center h-full w-full p-6">
@@ -130,20 +138,31 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        onAuthStateChanged(auth, (user) => {
+        const adminLink = document.getElementById('admin-link');
+
+        // Gestion de l'authentification et des droits Admin
+        onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = 'index.html';
             } else {
-                // Stocker l'ID pour player.html
+                // On garde l'ID joueur en local pour player.html
                 localStorage.setItem('playerId', user.uid);
-                if(user.email === "tonadmin@mail.com") document.getElementById('admin-btn').classList.remove('hidden');
+                
+                // Vérification si l'utilisateur est admin dans la DB
+                const userRef = ref(db, `users/${user.uid}`);
+                const snapshot = await get(userRef);
+                
+                if (snapshot.exists() && snapshot.val().isAdmin === true) {
+                    adminLink.classList.remove('hidden');
+                    adminLink.onclick = () => window.location.href = 'Admin.html';
+                }
             }
         });
 
-        // CRÉER UNE ROOM
+        // Fonction Créer Room
         document.getElementById('btn-create').onclick = async () => {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             let code = '';
@@ -158,27 +177,28 @@
             window.location.href = `host.html?room=${code}`;
         };
 
-        // REJOINDRE UNE ROOM
+        // Fonction Rejoindre Room (GO)
         document.getElementById('btn-go').onclick = (e) => {
             e.preventDefault();
             const code = document.getElementById('room-code').value.toUpperCase().trim();
             
             if(code.length === 5) {
-                // On s'assure que le playerId est bien là avant de partir
+                // On renforce le stockage de l'ID avant de partir
                 if(auth.currentUser) {
                     localStorage.setItem('playerId', auth.currentUser.uid);
                     window.location.href = `player.html?room=${code}`;
                 }
             } else {
-                alert("Code à 5 lettres !");
+                alert("Entre un code à 5 lettres !");
             }
         };
 
-        // DRAWER & DARK MODE
+        // Gestion du Drawer
         const drw = document.getElementById('drawer');
         document.getElementById('open-drawer').onclick = () => drw.classList.add('open');
         document.getElementById('close-drawer').onclick = () => drw.classList.remove('open');
 
+        // Dark Mode
         document.getElementById('toggle-dark').onclick = () => {
             document.documentElement.classList.toggle('dark');
             const isDark = document.documentElement.classList.contains('dark');
@@ -186,8 +206,18 @@
             localStorage.setItem('dark', isDark);
         };
 
-        if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
-        document.getElementById('btn-logout').onclick = () => signOut(auth);
+        if(localStorage.getItem('dark') === 'true') {
+            document.documentElement.classList.add('dark');
+            document.getElementById('dark-icon').innerText = "☀️";
+        }
+
+        // Déconnexion
+        document.getElementById('btn-logout').onclick = () => {
+            signOut(auth).then(() => {
+                localStorage.removeItem('playerId');
+                window.location.href = 'index.html';
+            });
+        };
     </script>
 </body>
 </html>
