@@ -3,135 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Game Host - Blindtest</title>
+    <title>Régie Game - Blindtest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
         body { 
             font-family: 'Fredoka', sans-serif; 
-            margin: 0; padding: 0; 
-            height: 100dvh; 
-            overflow: hidden; 
-            display: flex; flex-direction: column; 
-            background-color: #ffffff;
-            transition: background-color 0.3s ease;
+            margin: 0; padding: 0; height: 100dvh; overflow: hidden; 
+            display: flex; flex-direction: column; background-color: #ffffff;
         }
         .dark body { background-color: #000000; }
-        .dark #bg-container { display: none; }
-
-        /* ☁️ NUAGES PASTEL */
-        #bg-container {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1;
-            overflow: hidden;
-        }
-        .cloud {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(70px);
-            opacity: 0.6;
-            animation: floatClouds 15s infinite alternate ease-in-out;
-        }
+        #bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; overflow: hidden; }
+        .cloud { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6; animation: floatClouds 15s infinite alternate ease-in-out; }
         .cloud-pink { background: #ffdce0; width: 60vw; height: 60vw; top: -10%; left: -5%; }
-        .cloud-blue { background: #dcf2ff; width: 70vw; height: 70vw; bottom: -15%; right: -5%; animation-delay: -4s; }
-        .cloud-green { background: #dcffe4; width: 45vw; height: 45vw; top: 20%; left: 30%; animation-delay: -7s; }
+        .cloud-blue { background: #dcf2ff; width: 70vw; height: 70vw; bottom: -15%; right: -5%; }
+        
+        @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
 
-        @keyframes floatClouds {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(5%, 5%) scale(1.05); }
-        }
-
-        /* 🎮 BOUTONS PHYSIQUES */
-        .btn-game {
-            border-radius: 20px;
-            color: white;
-            font-weight: 700;
-            transition: all 0.1s ease;
-            border-bottom: 5px solid rgba(0,0,0,0.2);
-            text-shadow: 0px 1px 2px rgba(0,0,0,0.1);
-            text-transform: uppercase;
-            font-size: 0.8rem;
-        }
+        .btn-game { border-radius: 20px; color: white; font-weight: 700; border-bottom: 5px solid rgba(0,0,0,0.15); transition: 0.1s; text-transform: uppercase; font-size: 0.75rem; }
         .btn-game:active { transform: translateY(3px); border-bottom-width: 2px; }
         
-        .btn-success { background-color: #b9fbc0; color: #1a531b; } /* Vert */
-        .btn-danger { background-color: #ff9aa2; } /* Rouge */
-        .btn-neutral { background-color: #a0c4ff; } /* Bleu */
+        .btn-play { background-color: #b9fbc0; color: #1a531b; } /* Vert */
+        .btn-pause { background-color: #fef08a; color: #854d0e; } /* Jaune */
+        .btn-stop { background-color: #ff9aa2; } /* Rouge */
+        .btn-reveal { background-color: #a0c4ff; } /* Bleu */
 
-        /* 🍱 BENTO CARDS */
-        .bento-card {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            border-radius: 24px;
-        }
+        .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
-
-        /* EFFET BUZZER */
-        .is-buzzing {
-            animation: pulse-buzz 0.5s infinite;
-            border: 4px solid #ffde59 !important;
-            background: rgba(255, 222, 89, 0.3) !important;
-        }
-        @keyframes pulse-buzz {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
+        
+        .is-buzzing { animation: pulse 0.5s infinite; border: 4px solid #facc15 !important; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
     </style>
 </head>
 <body>
 
-    <div id="bg-container">
+    <div id="bg-container" class="dark:hidden">
         <div class="cloud cloud-pink"></div>
         <div class="cloud cloud-blue"></div>
-        <div class="cloud cloud-green"></div>
     </div>
 
-    <main class="relative z-10 flex flex-col h-full w-full p-4">
+    <main class="relative z-10 flex flex-col h-full w-full p-4 space-y-4">
         
-        <!-- TOP BAR : INFOS ROOM -->
-        <div class="flex justify-between items-center mb-4">
-            <div class="bento-card px-4 py-2 text-xs font-bold dark:text-white">
-                ROOM: <span id="room-id" class="text-rose-400">-----</span>
-            </div>
-            <div class="bento-card px-4 py-2 text-xs font-bold dark:text-white">
-                MANCHE: <span id="round-num">1/10</span>
-            </div>
+        <!-- HEADER -->
+        <div class="flex justify-between items-center">
+            <div class="bento-card px-4 py-2 text-xs font-bold dark:text-white uppercase">Room: <span id="room-id" class="text-rose-400">---</span></div>
+            <button onclick="window.location.href='menu.html'" class="text-xs font-bold text-gray-400 underline">Quitter</button>
         </div>
 
-        <!-- ECRAN PRINCIPAL (Réponse / Musique) -->
-        <div class="flex-1 flex flex-col items-center justify-center space-y-6">
-            <div class="bento-card w-full max-w-2xl p-10 text-center shadow-xl">
-                <div id="music-icon" class="text-6xl mb-4">🎵</div>
-                <h2 id="display-title" class="text-3xl md:text-5xl font-black text-gray-800 dark:text-white tracking-tighter mb-2 italic">
-                    PRÊT ?
+        <!-- ZONEcentrale : SÉLECTION ET RÉVÉLATION -->
+        <div class="flex-1 flex flex-col space-y-4 overflow-hidden">
+            
+            <!-- ÉCRAN DE RÉVÉLATION -->
+            <div class="bento-card p-6 text-center flex flex-col items-center justify-center min-h-[160px]">
+                <div id="status-icon" class="text-4xl mb-2 animate-bounce">🎵</div>
+                <h2 id="display-title" class="text-2xl font-black text-gray-800 dark:text-white uppercase tracking-tighter italic">
+                    Sélectionnez un titre
                 </h2>
-                <p id="display-artist" class="text-xl text-rose-400 font-bold uppercase tracking-widest opacity-0 transition-opacity duration-500">
-                    Artiste Inconnu
-                </p>
+                <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
+                    <p id="artist-name" class="text-rose-500 font-bold text-lg uppercase"></p>
+                </div>
             </div>
 
-            <!-- PLAYER AUDIO CACHÉ -->
-            <audio id="main-audio" class="hidden"></audio>
-        </div>
-
-        <!-- GRILLE DES SCORES / JOUEURS -->
-        <div id="player-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <!-- Exemple de carte joueur -->
-            <div class="bento-card p-3 flex flex-col items-center justify-center border-b-4 border-black/10">
-                <span class="text-xs font-bold text-gray-400">EN ATTENTE</span>
+            <!-- LISTE DES MUSIQUES (Scrollable) -->
+            <div class="bento-card p-4 flex-1 overflow-y-auto">
+                <h3 class="text-xs font-black mb-3 text-gray-400 uppercase">Ma Playlist</h3>
+                <div id="playlist" class="space-y-2">
+                    <!-- Généré par JS -->
+                </div>
             </div>
         </div>
 
-        <!-- CONTRÔLES HOST -->
-        <div class="grid grid-cols-3 gap-3 pb-2">
-            <button id="btn-reveal" class="btn-game btn-neutral py-4 italic">Révéler</button>
-            <button id="btn-next" class="btn-game btn-success py-4 italic">Suivant</button>
-            <button id="btn-stop" class="btn-game btn-danger py-4 italic">Stop</button>
+        <!-- GRILLE DES JOUEURS -->
+        <div id="player-grid" class="grid grid-cols-2 md:grid-cols-4 gap-2 h-24">
+            <!-- Rempli par Firebase -->
+        </div>
+
+        <!-- RÉGIE AUDIO (Boutons) -->
+        <div class="grid grid-cols-4 gap-2">
+            <button id="ctrl-play" class="btn-game btn-play py-4">Play</button>
+            <button id="ctrl-pause" class="btn-game btn-pause py-4">Pause</button>
+            <button id="ctrl-stop" class="btn-game btn-stop py-4">Stop</button>
+            <button id="ctrl-reveal" class="btn-game btn-reveal py-4">Révéler</button>
         </div>
 
     </main>
+
+    <audio id="audio-player"></audio>
 
     <script type="module">
         import { db } from './firebase-config.js';
@@ -139,42 +97,53 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
-        document.getElementById('room-id').innerText = roomId || "ERR";
+        const audio = document.getElementById('audio-player');
+        document.getElementById('room-id').innerText = roomId;
 
-        // 1. ÉCOUTER LES JOUEURS ET LES BUZZ
-        const playersRef = ref(db, `rooms/${roomId}/players`);
-        onValue(playersRef, (snapshot) => {
+        // 1. CHARGER LA PLAYLIST (Exemple avec données simulées, à lier à ta DB plus tard)
+        const playlistData = [
+            { title: "Générique Pokémon", artist: "Jason Paige", url: "url_ici" },
+            { title: "Thriller", artist: "Michael Jackson", url: "url_ici" }
+        ];
+
+        const playlistCont = document.getElementById('playlist');
+        playlistData.forEach(track => {
+            const btn = document.createElement('div');
+            btn.className = "p-3 bg-white/60 dark:bg-zinc-800 rounded-xl cursor-pointer hover:bg-white transition-colors border-l-4 border-transparent hover:border-rose-400";
+            btn.innerHTML = `<p class="font-bold text-sm dark:text-white">${track.title}</p>`;
+            btn.onclick = () => selectTrack(track);
+            playlistCont.appendChild(btn);
+        });
+
+        function selectTrack(track) {
+            audio.src = track.url;
+            document.getElementById('display-title').innerText = "Morceau prêt !";
+            document.getElementById('artist-name').innerText = track.title + " - " + track.artist;
+            document.getElementById('reveal-zone').classList.add('hidden');
+            // Reset buzzer sur Firebase
+            update(ref(db, `rooms/${roomId}`), { state: 'playing', buzzerName: null });
+        }
+
+        // 2. COMMANDES RÉGIE
+        document.getElementById('ctrl-play').onclick = () => audio.play();
+        document.getElementById('ctrl-pause').onclick = () => audio.pause();
+        document.getElementById('ctrl-stop').onclick = () => { audio.pause(); audio.currentTime = 0; };
+        document.getElementById('ctrl-reveal').onclick = () => document.getElementById('reveal-zone').classList.toggle('hidden');
+
+        // 3. ÉCOUTE DES JOUEURS (Firebase)
+        onValue(ref(db, `rooms/${roomId}/players`), (snapshot) => {
             const grid = document.getElementById('player-grid');
             grid.innerHTML = "";
-            if (snapshot.exists()) {
-                const players = snapshot.val();
-                Object.entries(players).forEach(([id, data]) => {
+            if(snapshot.exists()) {
+                Object.entries(snapshot.val()).forEach(([id, p]) => {
                     const card = document.createElement('div');
-                    // Ajout de la classe 'is-buzzing' si le joueur a buzzé
-                    const buzzingClass = data.isBuzzing ? 'is-buzzing' : '';
-                    
-                    card.className = `bento-card p-4 flex flex-col items-center border-b-4 border-black/10 transition-all ${buzzingClass}`;
-                    card.innerHTML = `
-                        <span class="text-lg font-black dark:text-white">${data.pseudo}</span>
-                        <span class="text-2xl font-black text-rose-400">${data.score || 0}</span>
-                    `;
+                    card.className = `bento-card flex flex-col items-center justify-center ${p.isBuzzing ? 'is-buzzing' : ''}`;
+                    card.innerHTML = `<span class="text-xs font-black dark:text-white">${p.pseudo}</span><span class="text-rose-400 font-bold">${p.score}</span>`;
                     grid.appendChild(card);
                 });
             }
         });
 
-        // 2. BOUTONS DE CONTRÔLE
-        document.getElementById('btn-reveal').onclick = () => {
-            document.getElementById('display-artist').classList.remove('opacity-0');
-        };
-
-        document.getElementById('btn-next').onclick = () => {
-            // Logique pour passer au morceau suivant
-            document.getElementById('display-artist').classList.add('opacity-0');
-            alert("Morceau suivant !");
-        };
-
-        // GESTION DU MODE SOMBRE PERSISTANT
         if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
     </script>
 </body>
