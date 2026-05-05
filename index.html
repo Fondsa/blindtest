@@ -151,7 +151,11 @@
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     saveUserToDB(res.user, pseudo);
                 }
-            } catch (e) { alert(e.message); }
+            } catch (e) {
+    console.error("Code d'erreur :", e.code);
+    console.error("Message complet :", e.message);
+    alert("Erreur : " + e.code); // Ça t'affichera le code précis
+}
         };
 
         // 2. GOOGLE
@@ -160,7 +164,11 @@
                 const provider = new GoogleAuthProvider();
                 const res = await signInWithPopup(auth, provider);
                 saveUserToDB(res.user);
-            } catch (e) { alert(e.message); }
+            } catch (e) {
+    console.error("Code d'erreur :", e.code);
+    console.error("Message complet :", e.message);
+    alert("Erreur : " + e.code); // Ça t'affichera le code précis
+}
         };
 
         // 3. ANONYME
@@ -170,7 +178,11 @@
             try {
                 const res = await signInAnonymously(auth);
                 saveUserToDB(res.user, anonPseudo);
-            } catch (e) { alert(e.message); }
+            } catch (e) {
+    console.error("Code d'erreur :", e.code);
+    console.error("Message complet :", e.message);
+    alert("Erreur : " + e.code); // Ça t'affichera le code précis
+}
         };
     </script>
 </body>
