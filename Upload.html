@@ -1,0 +1,28 @@
+<!-- ... (Gardons le même style Bento que précédemment) ... -->
+<script type="module">
+    import { db, auth } from './firebase-config.js';
+    import { ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const fileInp = document.getElementById('fileInp');
+
+    async function handleUpload(file) {
+        if (file.size > 800000) { // Limite Realtime DB (env. 800ko - 1Mo par entrée)
+            alert("Fichier trop lourd ! Coupe ton MP3 pour qu'il fasse moins d'une minute.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file); // Transforme le MP3 en texte Base64
+        
+        reader.onload = async () => {
+            const base64Audio = reader.result; // C'est ton MP3 sous forme de texte
+            
+            const libraryRef = ref(db, 'library');
+            await push(libraryRef, {
+                title: file.name.replace('.mp3', ''),
+                audioData: base64Audio, // On stocke le son en texte !
+                addedBy: auth.currentUser.displayName
+            });
+            alert("Musique importée dans la base de données ! ✅");
+        };
+    </script>
