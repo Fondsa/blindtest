@@ -1,28 +1,113 @@
-<!-- ... (Gardons le même style Bento que précédemment) ... -->
-<script type="module">
-    import { db, auth } from './firebase-config.js';
-    import { ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    const fileInp = document.getElementById('fileInp');
-
-    async function handleUpload(file) {
-        if (file.size > 800000) { // Limite Realtime DB (env. 800ko - 1Mo par entrée)
-            alert("Fichier trop lourd ! Coupe ton MP3 pour qu'il fasse moins d'une minute.");
-            return;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload - Blindtest 🎶</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
+            height: 100dvh; display: flex; align-items: center; justify-content: center;
         }
+        .bento-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 32px; border: 4px solid #ffffff;
+            box-shadow: 0 10px 0px rgba(0,0,0,0.05);
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #f43f5e;
+            border-radius: 50%;
+            width: 30px; height: 30px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="p-4">
 
-        const reader = new FileReader();
-        reader.readAsDataURL(file); // Transforme le MP3 en texte Base64
-        
-        reader.onload = async () => {
-            const base64Audio = reader.result; // C'est ton MP3 sous forme de texte
+    <div class="max-w-md w-full space-y-6">
+        <div class="text-center">
+            <h1 class="text-4xl font-bold text-gray-800 tracking-tighter">Import <span class="text-rose-500 italic">Direct</span></h1>
+            <p class="text-gray-500 font-medium">Le MP3 est stocké en texte dans la DB !</p>
+        </div>
+
+        <div class="bento-card p-8 text-center space-y-6">
+            <div id="drop-zone" class="border-4 border-dashed border-rose-200 rounded-3xl p-10 cursor-pointer hover:bg-rose-50 transition-colors">
+                <span class="text-6xl">📥</span>
+                <p class="mt-4 font-bold text-gray-600">Clique pour choisir un MP3</p>
+                <p class="text-xs text-rose-400 mt-2 uppercase font-black tracking-widest">Max 30-40 secondes</p>
+                <input type="file" id="fileInp" accept="audio/mpeg" class="hidden">
+            </div>
+
+            <div id="loading-area" class="flex flex-col items-center gap-2 hidden">
+                <div class="loader"></div>
+                <p class="text-sm font-bold text-rose-500 uppercase">Conversion en texte...</p>
+            </div>
+        </div>
+
+        <button onclick="window.location.href='index.html'" class="w-full text-center text-xs font-bold text-gray-400 uppercase underline">Retour au menu</button>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const fileInp = document.getElementById('fileInp');
+        const dropZone = document.getElementById('drop-zone');
+        const loadingArea = document.getElementById('loading-area');
+
+        // Sécurité : Faut être loggé
+        onAuthStateChanged(auth, (user) => { if (!user) window.location.href = 'index.html'; });
+
+        dropZone.onclick = () => fileInp.click();
+
+        fileInp.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Limite de taille pour la Realtime DB (environ 1.5 Mo max pour être safe)
+            if (file.size > 1500000) {
+                alert("❌ Fichier trop lourd ! Coupe ton MP3 (max 30-40 sec) pour qu'il rentre dans la base de données gratuite.");
+                return;
+            }
+
+            loadingArea.classList.remove('hidden');
+            dropZone.classList.add('hidden');
+
+            const reader = new FileReader();
             
-            const libraryRef = ref(db, 'library');
-            await push(libraryRef, {
-                title: file.name.replace('.mp3', ''),
-                audioData: base64Audio, // On stocke le son en texte !
-                addedBy: auth.currentUser.displayName
-            });
-            alert("Musique importée dans la base de données ! ✅");
+            // Étape clé : Conversion du fichier en Base64
+            reader.readAsDataURL(file);
+            
+            reader.onload = async () => {
+                const base64String = reader.result;
+
+                try {
+                    const libraryRef = ref(db, 'library');
+                    const newMusicRef = push(libraryRef);
+                    
+                    await set(newMusicRef, {
+                        title: file.name.replace('.mp3', ''),
+                        audioData: base64String, // On stocke tout le son ici
+                        addedBy: auth.currentUser.displayName || "Anonyme",
+                        timestamp: Date.now()
+                    });
+
+                    alert("✅ Musique enregistrée directement dans Firebase !");
+                    window.location.reload();
+                } catch (error) {
+                    alert("Erreur Firebase : " + error.message);
+                    loadingArea.classList.add('hidden');
+                    dropZone.classList.remove('hidden');
+                }
+            };
         };
     </script>
+</body>
+</html>
