@@ -1,18 +1,187 @@
-// EXEMPLE À METTRE DANS TON admin.html
-async function playNextSong() {
-    const snapshot = await get(ref(db, 'library'));
-    if (!snapshot.exists()) return alert("La bibliothèque est vide !");
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Blindtest Party 👑</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
+            min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
+        }
+        .bento-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 28px; border: 4px solid #ffffff;
+            box-shadow: 0 8px 0px rgba(0,0,0,0.05);
+        }
+        .btn-game { transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .btn-game:active { transform: scale(0.95) translateY(4px); shadow: none; }
+        
+        .pulse { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(244, 63, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
 
-    const songs = Object.values(snapshot.val());
-    const randomSong = songs[Math.floor(Math.random() * songs.length)];
+    <!-- HEADER ADMIN -->
+    <div class="w-full max-w-4xl flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div class="text-center md:text-left">
+            <h1 class="text-3xl font-bold text-gray-800 tracking-tighter">Room: <span id="room-id-title" class="text-rose-500 italic">----</span></h1>
+            <p class="text-sm font-bold text-gray-500 uppercase tracking-widest">Console Organisateur 👑</p>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="window.location.href='Upload.html'" class="btn-game px-6 py-3 bg-white rounded-2xl font-bold text-gray-700 border-2 border-white shadow-sm">➕ Ajouter sons</button>
+            <button id="btn-logout" class="btn-game px-6 py-3 bg-gray-800 text-white rounded-2xl font-bold shadow-lg">Quitter 🚪</button>
+        </div>
+    </div>
 
-    // Le navigateur peut lire le texte Base64 directement !
-    const audio = new Audio(randomSong.audioData);
-    audio.play();
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl">
+        
+        <!-- COLONNE GAUCHE : PLAYLIST & CONTROLE -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bento-card p-8 flex flex-col items-center justify-center text-center space-y-6 border-b-[12px] border-b-indigo-400">
+                <div id="status-icon" class="text-7xl mb-2">🧊</div>
+                <h2 id="current-song-display" class="text-2xl font-bold text-gray-800 italic">Prêt à lancer ?</h2>
+                
+                <div class="flex flex-wrap justify-center gap-4 w-full">
+                    <button id="btn-next" class="btn-game flex-1 min-w-[200px] py-6 bg-indigo-500 text-white rounded-3xl font-bold text-2xl shadow-[0_10px_0_0_#4338ca]">LANCER UN SON</button>
+                    <button id="btn-reveal" class="btn-game px-8 py-6 bg-amber-400 text-amber-900 rounded-3xl font-bold text-2xl shadow-[0_10px_0_0_#d97706] hidden">RÉVÉLER</button>
+                </div>
+            </div>
 
-    // Mettre à jour l'état de la room pour les joueurs
-    update(ref(db, `rooms/${roomId}`), {
-        state: 'playing',
-        currentTitle: randomSong.title
-    });
-}
+            <!-- ZONE DE BUZZ (S'affiche quand quelqu'un buzze) -->
+            <div id="buzzer-alert" class="bento-card p-8 border-4 border-rose-500 hidden pulse">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-rose-500 font-black uppercase tracking-widest">⚠️ BUZZ EN COURS !</p>
+                        <h3 id="buzzer-name" class="text-4xl font-bold text-gray-800">Joueur...</h3>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="btn-correct" class="btn-game p-6 bg-green-500 text-white rounded-2xl font-bold text-xl shadow-[0_6px_0_0_#15803d]">✅</button>
+                        <button id="btn-wrong" class="btn-game p-6 bg-rose-500 text-white rounded-2xl font-bold text-xl shadow-[0_6px_0_0_#be123c]">❌</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLONNE DROITE : CLASSEMENT -->
+        <div class="bento-card p-6 border-b-[12px] border-b-emerald-400">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                🏆 Classement <span id="player-count" class="text-sm bg-emerald-100 text-emerald-600 px-2 py-1 rounded-lg">0</span>
+            </h3>
+            <div id="leaderboard" class="space-y-3">
+                <!-- Les joueurs s'afficheront ici -->
+                <p class="text-gray-400 italic text-sm">En attente de joueurs...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { ref, onValue, update, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+        let currentAudio = null;
+        let currentSongData = null;
+
+        if (!roomId) window.location.href = 'index.html';
+        document.getElementById('room-id-title').innerText = roomId;
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = 'index.html';
+        });
+
+        document.getElementById('btn-logout').onclick = () => {
+            if(confirm("Fermer la room ?")) signOut(auth);
+        };
+
+        // --- LOGIQUE DU JEU ---
+
+        const roomRef = ref(db, `rooms/${roomId}`);
+
+        // Écouter les buzzers et les joueurs
+        onValue(roomRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            // Gestion de l'alerte Buzz
+            const alertBox = document.getElementById('buzzer-alert');
+            if (data.state === 'buzzed') {
+                if (currentAudio) currentAudio.pause();
+                document.getElementById('buzzer-name').innerText = data.buzzerName;
+                alertBox.classList.remove('hidden');
+                document.getElementById('btn-reveal').classList.remove('hidden');
+            } else {
+                alertBox.classList.add('hidden');
+            }
+
+            // Mise à jour Leaderboard
+            if (data.players) {
+                const players = Object.entries(data.players).sort((a,b) => b[1].score - a[1].score);
+                document.getElementById('player-count').innerText = players.length;
+                document.getElementById('leaderboard').innerHTML = players.map(([id, p]) => `
+                    <div class="flex justify-between items-center bg-white p-3 rounded-xl border-2 border-gray-50 shadow-sm">
+                        <span class="font-bold text-gray-700">${p.name}</span>
+                        <span class="bg-indigo-100 text-indigo-600 font-black px-3 py-1 rounded-lg">${p.score} pt</span>
+                    </div>
+                `).join('');
+            }
+        });
+
+        // Lancer une musique au hasard (Base64)
+        document.getElementById('btn-next').onclick = async () => {
+            const snap = await get(ref(db, 'library'));
+            if (!snap.exists()) return alert("Ta bibliothèque est vide ! Va sur Upload.html");
+
+            const songs = Object.values(snap.val());
+            currentSongData = songs[Math.floor(Math.random() * songs.length)];
+
+            if (currentAudio) currentAudio.pause();
+            
+            // On joue le Base64
+            currentAudio = new Audio(currentSongData.audioData);
+            currentAudio.play();
+
+            document.getElementById('status-icon').innerText = "🎵";
+            document.getElementById('current-song-display').innerText = "Musique en cours...";
+            document.getElementById('btn-reveal').classList.add('hidden');
+            
+            update(roomRef, { state: 'playing', buzzerName: '', buzzerId: '' });
+        };
+
+        // Révéler le titre
+        document.getElementById('btn-reveal').onclick = () => {
+            document.getElementById('current-song-display').innerText = `C'était : ${currentSongData.title}`;
+            document.getElementById('status-icon').innerText = "✨";
+        };
+
+        // Gérer les points
+        document.getElementById('btn-correct').onclick = async () => {
+            const snap = await get(roomRef);
+            const data = snap.val();
+            const pId = data.buzzerId;
+            const currentScore = data.players[pId].score || 0;
+
+            await update(ref(db, `rooms/${roomId}/players/${pId}`), { score: currentScore + 1 });
+            update(roomRef, { state: 'waiting' });
+            document.getElementById('btn-reveal').click();
+        };
+
+        document.getElementById('btn-wrong').onclick = () => {
+            update(roomRef, { state: 'playing' });
+            if (currentAudio) currentAudio.play();
+        };
+
+    </script>
+</body>
+</html>
