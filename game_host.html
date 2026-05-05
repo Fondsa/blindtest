@@ -12,6 +12,7 @@
             font-family: 'Fredoka', sans-serif; 
             margin: 0; padding: 0; height: 100dvh; overflow: hidden; 
             display: flex; flex-direction: column; background-color: #ffffff;
+            transition: background-color 0.3s ease;
         }
         .dark body { background-color: #000000; }
         #bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; overflow: hidden; }
@@ -24,16 +25,17 @@
         .btn-game { border-radius: 20px; color: white; font-weight: 700; border-bottom: 5px solid rgba(0,0,0,0.15); transition: 0.1s; text-transform: uppercase; font-size: 0.75rem; }
         .btn-game:active { transform: translateY(3px); border-bottom-width: 2px; }
         
-        .btn-play { background-color: #b9fbc0; color: #1a531b; } /* Vert */
-        .btn-pause { background-color: #fef08a; color: #854d0e; } /* Jaune */
-        .btn-stop { background-color: #ff9aa2; } /* Rouge */
-        .btn-reveal { background-color: #a0c4ff; } /* Bleu */
+        .btn-play { background-color: #b9fbc0; color: #1a531b; }
+        .btn-pause { background-color: #fef08a; color: #854d0e; }
+        .btn-stop { background-color: #ff9aa2; }
+        .btn-reveal { background-color: #a0c4ff; }
 
         .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
         
-        .is-buzzing { animation: pulse 0.5s infinite; border: 4px solid #facc15 !important; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        /* Personnalisation de la scrollbar pour rester propre */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -43,48 +45,47 @@
         <div class="cloud cloud-blue"></div>
     </div>
 
-    <main class="relative z-10 flex flex-col h-full w-full p-4 space-y-4">
+    <main class="relative z-10 flex flex-col h-full w-full p-4 space-y-3">
         
         <!-- HEADER -->
         <div class="flex justify-between items-center">
-            <div class="bento-card px-4 py-2 text-xs font-bold dark:text-white uppercase">Room: <span id="room-id" class="text-rose-400">---</span></div>
+            <div class="bento-card px-4 py-2 text-xs font-bold dark:text-white uppercase tracking-tighter">Room: <span id="room-id" class="text-rose-400">---</span></div>
             <button onclick="window.location.href='menu.html'" class="text-xs font-bold text-gray-400 underline">Quitter</button>
         </div>
 
-        <!-- ZONEcentrale : SÉLECTION ET RÉVÉLATION -->
-        <div class="flex-1 flex flex-col space-y-4 overflow-hidden">
-            
-            <!-- ÉCRAN DE RÉVÉLATION -->
-            <div class="bento-card p-6 text-center flex flex-col items-center justify-center min-h-[160px]">
-                <div id="status-icon" class="text-4xl mb-2 animate-bounce">🎵</div>
-                <h2 id="display-title" class="text-2xl font-black text-gray-800 dark:text-white uppercase tracking-tighter italic">
-                    Sélectionnez un titre
-                </h2>
-                <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
-                    <p id="artist-name" class="text-rose-500 font-bold text-lg uppercase"></p>
+        <!-- ECRAN DE RÉVÉLATION -->
+        <div class="bento-card p-4 text-center flex flex-col items-center justify-center min-h-[120px]">
+            <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic">Prêt à jouer ?</h2>
+            <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
+                <p id="artist-name" class="text-rose-500 font-bold text-md uppercase"></p>
+            </div>
+        </div>
+
+        <!-- DOUBLE PLAYLIST -->
+        <div class="flex-1 flex flex-col min-h-0 space-y-3">
+            <!-- SECTION BASE -->
+            <div class="bento-card p-3 flex flex-col min-h-[45%]">
+                <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📦 Musiques de Base (Admin)</h3>
+                <div id="list-base" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
+                    <!-- JS injecte ici -->
                 </div>
             </div>
 
-            <!-- LISTE DES MUSIQUES (Scrollable) -->
-            <div class="bento-card p-4 flex-1 overflow-y-auto">
-                <h3 class="text-xs font-black mb-3 text-gray-400 uppercase">Ma Playlist</h3>
-                <div id="playlist" class="space-y-2">
-                    <!-- Généré par JS -->
+            <!-- SECTION IMPORTÉ -->
+            <div class="bento-card p-3 flex flex-col min-h-[45%]">
+                <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📂 Mes Imports (Compte)</h3>
+                <div id="list-imported" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
+                    <!-- JS injecte ici -->
                 </div>
             </div>
         </div>
 
-        <!-- GRILLE DES JOUEURS -->
-        <div id="player-grid" class="grid grid-cols-2 md:grid-cols-4 gap-2 h-24">
-            <!-- Rempli par Firebase -->
-        </div>
-
-        <!-- RÉGIE AUDIO (Boutons) -->
-        <div class="grid grid-cols-4 gap-2">
-            <button id="ctrl-play" class="btn-game btn-play py-4">Play</button>
-            <button id="ctrl-pause" class="btn-game btn-pause py-4">Pause</button>
-            <button id="ctrl-stop" class="btn-game btn-stop py-4">Stop</button>
-            <button id="ctrl-reveal" class="btn-game btn-reveal py-4">Révéler</button>
+        <!-- RÉGIE AUDIO -->
+        <div class="grid grid-cols-4 gap-2 h-16">
+            <button id="ctrl-play" class="btn-game btn-play">Play</button>
+            <button id="ctrl-pause" class="btn-game btn-pause">Pause</button>
+            <button id="ctrl-stop" class="btn-game btn-stop">Stop</button>
+            <button id="ctrl-reveal" class="btn-game btn-reveal">Révéler</button>
         </div>
 
     </main>
@@ -92,57 +93,57 @@
     <audio id="audio-player"></audio>
 
     <script type="module">
-        import { db } from './firebase-config.js';
+        import { db, auth } from './firebase-config.js';
         import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
         const audio = document.getElementById('audio-player');
         document.getElementById('room-id').innerText = roomId;
 
-        // 1. CHARGER LA PLAYLIST (Exemple avec données simulées, à lier à ta DB plus tard)
-        const playlistData = [
-            { title: "Générique Pokémon", artist: "Jason Paige", url: "url_ici" },
-            { title: "Thriller", artist: "Michael Jackson", url: "url_ici" }
-        ];
+        onAuthStateChanged(auth, (user) => {
+            if (!user) return;
 
-        const playlistCont = document.getElementById('playlist');
-        playlistData.forEach(track => {
-            const btn = document.createElement('div');
-            btn.className = "p-3 bg-white/60 dark:bg-zinc-800 rounded-xl cursor-pointer hover:bg-white transition-colors border-l-4 border-transparent hover:border-rose-400";
-            btn.innerHTML = `<p class="font-bold text-sm dark:text-white">${track.title}</p>`;
-            btn.onclick = () => selectTrack(track);
-            playlistCont.appendChild(btn);
+            // 1. CHARGER LES MUSIQUES DE BASE
+            onValue(ref(db, 'musics/base'), (snapshot) => {
+                renderList(snapshot, 'list-base');
+            });
+
+            // 2. CHARGER LES MUSIQUES IMPORTÉES DU COMPTE
+            onValue(ref(db, `musics/users/${user.uid}`), (snapshot) => {
+                renderList(snapshot, 'list-imported');
+            });
         });
 
-        function selectTrack(track) {
-            audio.src = track.url;
-            document.getElementById('display-title').innerText = "Morceau prêt !";
-            document.getElementById('artist-name').innerText = track.title + " - " + track.artist;
-            document.getElementById('reveal-zone').classList.add('hidden');
-            // Reset buzzer sur Firebase
-            update(ref(db, `rooms/${roomId}`), { state: 'playing', buzzerName: null });
+        function renderList(snapshot, elementId) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = "";
+            if (snapshot.exists()) {
+                Object.entries(snapshot.val()).forEach(([id, track]) => {
+                    const item = document.createElement('div');
+                    item.className = "p-2 bg-white/40 dark:bg-white/5 rounded-xl cursor-pointer hover:bg-white/80 transition-all text-sm font-bold dark:text-white border-l-4 border-transparent hover:border-rose-300";
+                    item.innerText = track.title;
+                    item.onclick = () => {
+                        audio.src = track.url;
+                        document.getElementById('display-title').innerText = "Morceau chargé !";
+                        document.getElementById('artist-name').innerText = track.title + (track.artist ? " - " + track.artist : "");
+                        document.getElementById('reveal-zone').classList.add('hidden');
+                        // Reset l'état du jeu pour ce morceau
+                        update(ref(db, `rooms/${roomId}`), { state: 'playing', currentTrack: track.title });
+                    };
+                    container.appendChild(item);
+                });
+            } else {
+                container.innerHTML = `<p class="text-[10px] text-gray-400 italic text-center mt-2">Aucun titre trouvé</p>`;
+            }
         }
 
-        // 2. COMMANDES RÉGIE
+        // COMMANDES AUDIO
         document.getElementById('ctrl-play').onclick = () => audio.play();
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
         document.getElementById('ctrl-stop').onclick = () => { audio.pause(); audio.currentTime = 0; };
         document.getElementById('ctrl-reveal').onclick = () => document.getElementById('reveal-zone').classList.toggle('hidden');
-
-        // 3. ÉCOUTE DES JOUEURS (Firebase)
-        onValue(ref(db, `rooms/${roomId}/players`), (snapshot) => {
-            const grid = document.getElementById('player-grid');
-            grid.innerHTML = "";
-            if(snapshot.exists()) {
-                Object.entries(snapshot.val()).forEach(([id, p]) => {
-                    const card = document.createElement('div');
-                    card.className = `bento-card flex flex-col items-center justify-center ${p.isBuzzing ? 'is-buzzing' : ''}`;
-                    card.innerHTML = `<span class="text-xs font-black dark:text-white">${p.pseudo}</span><span class="text-rose-400 font-bold">${p.score}</span>`;
-                    grid.appendChild(card);
-                });
-            }
-        });
 
         if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
     </script>
