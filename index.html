@@ -2,71 +2,175 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Connexion - Blindtest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
-        body { font-family: 'Fredoka', sans-serif; background: #FFDEE9; height: 100dvh; display: flex; align-items: center; justify-content: center; }
-        .bento-card { background: white; border-radius: 32px; border: 4px solid #fff; box-shadow: 0 10px 0px rgba(0,0,0,0.05); }
+        body { 
+            font-family: 'Fredoka', sans-serif; 
+            margin: 0; padding: 0; height: 100dvh; overflow: hidden; 
+            display: flex; flex-direction: column; background-color: #ffffff;
+            transition: background-color 0.3s ease;
+        }
+        .dark body { background-color: #000000; }
+        
+        #bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; overflow: hidden; }
+        .cloud { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6; animation: floatClouds 15s infinite alternate ease-in-out; }
+        .cloud-pink { background: #ffdce0; width: 65vw; height: 65vw; top: -15%; left: -10%; }
+        .cloud-blue { background: #dcf2ff; width: 75vw; height: 75vw; bottom: -20%; right: -5%; }
+
+        @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
+
+        .bento-card {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 32px;
+        }
+        .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
+
+        input { background: rgba(255,255,255,0.8); border: none; outline: none; border-radius: 15px; padding: 12px; font-weight: 600; width: 100%; margin-bottom: 10px; }
+        .dark input { background: rgba(255,255,255,0.1); color: white; }
+
+        .btn-main { background: #ff9aa2; color: white; font-weight: 800; padding: 14px; border-radius: 20px; border-bottom: 5px solid rgba(0,0,0,0.1); transition: 0.1s; width: 100%; text-transform: uppercase; }
+        .btn-main:active { transform: translateY(3px); border-bottom-width: 2px; }
+        
+        .btn-google { background: white; color: #444; border: 1px solid #ddd; }
+        .btn-anon { background: #a0c4ff; color: white; }
     </style>
 </head>
-<body class="p-6">
-    <!-- Test -->
-    <div class="bento-card p-8 w-full max-w-sm space-y-6">
-        <div class="text-center"><h1 id="auth-title" class="text-3xl font-bold">Bienvenue !</h1></div>
-        
-        <div id="register-fields" class="space-y-4">
-            <input type="text" id="reg-pseudo" placeholder="Ton Pseudo" class="w-full p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 outline-none focus:border-rose-400">
-        </div>
-        
-        <div class="space-y-4">
-            <input type="email" id="auth-email" placeholder="Email" class="w-full p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 outline-none">
-            <input type="password" id="auth-pass" placeholder="Mot de passe" class="w-full p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 outline-none">
-        </div>
+<body>
 
-        <button id="btn-primary" class="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold shadow-[0_5px_0_0_#be123c]">S'inscrire</button>
-        
-        <button id="btn-google" class="w-full py-3 border-2 border-gray-100 rounded-2xl flex items-center justify-center gap-2 font-bold bg-white">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5"> Google
-        </button>
-
-        <p class="text-center text-sm text-gray-500 cursor-pointer underline" id="toggle-auth">Déjà un compte ? Se connecter</p>
+    <div id="bg-container">
+        <div class="cloud cloud-pink"></div>
+        <div class="cloud cloud-blue"></div>
     </div>
 
+    <main class="relative z-10 flex flex-col items-center justify-center h-full w-full p-6">
+        
+        <div class="w-full max-w-sm bento-card p-8">
+            <h1 id="form-title" class="text-3xl font-black text-gray-800 dark:text-white mb-6 italic italic text-center uppercase tracking-tighter">Connexion</h1>
+            
+            <!-- CHAMPS COMMUNS -->
+            <div id="pseudo-container" class="hidden">
+                <input type="text" id="user-pseudo" placeholder="Ton Pseudo">
+            </div>
+            
+            <div id="auth-fields">
+                <input type="email" id="user-email" placeholder="Email">
+                <input type="password" id="user-pass" placeholder="Mot de passe">
+            </div>
+
+            <button id="btn-primary" class="btn-main mb-4">C'est parti !</button>
+
+            <div class="flex items-center my-4 text-gray-400 text-xs font-bold uppercase tracking-widest">
+                <div class="flex-1 h-[1px] bg-gray-200 mr-2"></div> ou <div class="flex-1 h-[1px] bg-gray-200 ml-2"></div>
+            </div>
+
+            <!-- OPTIONS SOCIALES -->
+            <div class="space-y-3">
+                <button id="btn-google" class="btn-main btn-google flex items-center justify-center gap-2 text-xs">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Google
+                </button>
+                <button id="btn-anon" class="btn-main btn-anon text-xs">Jouer en Anonyme</button>
+            </div>
+
+            <!-- SWITCHER -->
+            <p class="text-center mt-6 text-sm font-bold text-gray-500">
+                <span id="switch-text">Pas de compte ?</span> 
+                <button id="btn-switch" class="text-rose-400 underline">S'inscrire</button>
+            </p>
+        </div>
+
+    </main>
+
     <script type="module">
-        import { auth } from './firebase-config.js';
-        import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { auth, db } from './firebase-config.js';
+        import { 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            signInWithPopup, 
+            GoogleAuthProvider, 
+            signInAnonymously 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        let isRegister = true;
         const btnPrimary = document.getElementById('btn-primary');
-        const toggleAuth = document.getElementById('toggle-auth');
-        const regFields = document.getElementById('register-fields');
+        const btnSwitch = document.getElementById('btn-switch');
+        const btnGoogle = document.getElementById('btn-google');
+        const btnAnon = document.getElementById('btn-anon');
+        const pseudoContainer = document.getElementById('pseudo-container');
+        const formTitle = document.getElementById('form-title');
 
-        toggleAuth.onclick = () => {
-            isRegister = !isRegister;
-            document.getElementById('auth-title').innerText = isRegister ? "Bienvenue !" : "Content de te revoir";
-            btnPrimary.innerText = isRegister ? "S'inscrire" : "Se connecter";
-            regFields.classList.toggle('hidden', !isRegister);
+        let isLoginMode = true;
+
+        // APPLIQUER DARK MODE
+        if (localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
+
+        // SWITCHER ENTRE CONNEXION ET INSCRIPTION
+        btnSwitch.onclick = () => {
+            isLoginMode = !isLoginMode;
+            formTitle.innerText = isLoginMode ? "Connexion" : "Créer un compte";
+            btnPrimary.innerText = isLoginMode ? "C'est parti !" : "Créer mon compte";
+            document.getElementById('switch-text').innerText = isLoginMode ? "Pas de compte ?" : "Déjà inscrit ?";
+            btnSwitch.innerText = isLoginMode ? "S'inscrire" : "Se connecter";
+            pseudoContainer.classList.toggle('hidden', isLoginMode);
         };
 
-        btnPrimary.onclick = async () => {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-pass').value;
-            if(isRegister) {
-                const pseudo = document.getElementById('reg-pseudo').value;
-                const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-                await updateProfile(userCred.user, { displayName: pseudo });
-            } else {
-                await signInWithEmailAndPassword(auth, email, pass);
+        // SAUVEGARDER L'UTILISATEUR DANS LA DB
+        async function saveUserToDB(user, pseudo = null) {
+            const userRef = ref(db, `users/${user.uid}`);
+            const snapshot = await get(userRef);
+            
+            // Si l'utilisateur n'existe pas encore dans la DB, on le crée
+            if (!snapshot.exists()) {
+                await set(userRef, {
+                    pseudo: pseudo || user.displayName || "Joueur",
+                    email: user.email || "Anonyme",
+                    isAdmin: false,
+                    createdAt: Date.now()
+                });
             }
             window.location.href = 'menu.html';
+        }
+
+        // 1. CONNEXION / INSCRIPTION EMAIL
+        btnPrimary.onclick = async () => {
+            const email = document.getElementById('user-email').value;
+            const pass = document.getElementById('user-pass').value;
+            const pseudo = document.getElementById('user-pseudo').value;
+
+            try {
+                if (isLoginMode) {
+                    const res = await signInWithEmailAndPassword(auth, email, pass);
+                    saveUserToDB(res.user);
+                } else {
+                    if(!pseudo) return alert("Choisis un pseudo !");
+                    const res = await createUserWithEmailAndPassword(auth, email, pass);
+                    saveUserToDB(res.user, pseudo);
+                }
+            } catch (e) { alert(e.message); }
         };
 
-        document.getElementById('btn-google').onclick = async () => {
-            const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
-            window.location.href = 'menu.html';
+        // 2. GOOGLE
+        btnGoogle.onclick = async () => {
+            try {
+                const provider = new GoogleAuthProvider();
+                const res = await signInWithPopup(auth, provider);
+                saveUserToDB(res.user);
+            } catch (e) { alert(e.message); }
+        };
+
+        // 3. ANONYME
+        btnAnon.onclick = async () => {
+            const anonPseudo = prompt("Entre un pseudo pour jouer :");
+            if (!anonPseudo) return;
+            try {
+                const res = await signInAnonymously(auth);
+                saveUserToDB(res.user, anonPseudo);
+            } catch (e) { alert(e.message); }
         };
     </script>
 </body>
