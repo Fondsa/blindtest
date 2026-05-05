@@ -1,171 +1,118 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Buzzer - Blindtest Party ⚡</title>
+    <title>Buzzer - Blindtest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
-        body { 
-            font-family: 'Fredoka', sans-serif;
-            background: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
-            height: 100dvh;
-            width: 100vw;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .bento-card {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 28px;
-            border: 4px solid #ffffff;
-            box-shadow: 0 8px 0px rgba(0,0,0,0.05);
-        }
-
-        /* Animation du Buzzer */
+        body { font-family: 'Fredoka', sans-serif; transition: 0.3s; height: 100dvh; overflow: hidden; }
+        .bento-card { border-radius: 28px; border: 4px solid #fff; box-shadow: 0 8px 0px rgba(0,0,0,0.05); }
+        .dark .bento-card { background: #1e293b; border-color: #334155; color: white; }
+        #drawer { transform: translateX(100%); transition: 0.4s ease; }
+        #drawer.open { transform: translateX(0); }
+        
         .buzzer-btn {
-            transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            touch-action: manipulation;
+            transition: transform 0.1s;
+            box-shadow: 0 15px 0px rgba(0,0,0,0.2);
         }
         .buzzer-btn:active {
-            transform: scale(0.9) translateY(10px);
-            box-shadow: 0 4px 0px #991b1b !important;
-        }
-        .buzzer-disabled {
-            filter: grayscale(1);
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .floating { animation: floating 3s ease-in-out infinite; }
-        @keyframes floating {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+            transform: scale(0.95) translateY(10px);
+            box-shadow: 0 5px 0px rgba(0,0,0,0.2);
         }
     </style>
 </head>
-<body class="p-4">
+<body class="bg-rose-50 dark:bg-slate-900 p-4 flex flex-col">
 
-    <!-- HEADER : INFOS JOUEUR -->
-    <div class="w-full max-w-md mx-auto flex items-center justify-between mb-4">
-        <div class="bento-card px-4 py-2 flex items-center gap-3">
-            <span class="text-2xl">👤</span>
-            <span id="player-name" class="font-bold text-gray-700">Chargement...</span>
+    <div class="flex justify-between items-center mb-6">
+        <div class="bento-card bg-white px-4 py-2 font-bold text-rose-500">
+            Score: <span id="my-score">0</span>
         </div>
-        <div class="bento-card px-4 py-2 flex items-center gap-3 border-b-4 border-b-rose-400">
-            <span class="font-bold text-rose-500">SCORE: <span id="player-score">0</span></span>
-        </div>
+        <button id="open-drawer" class="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-2xl">☰</button>
     </div>
 
-    <!-- MAIN INTERFACE -->
-    <div class="flex-1 w-full max-w-md mx-auto flex flex-col gap-4">
+    <!-- DRAWER -->
+    <div id="drawer" class="fixed top-0 right-0 h-full w-72 bg-white dark:bg-slate-800 z-50 p-8 flex flex-col shadow-2xl">
+        <button id="close-drawer" class="self-end text-xl dark:text-white">✕</button>
+        <h2 class="text-xl font-bold mb-6 dark:text-white">Personnalisation</h2>
         
-        <!-- ÉTAT DE LA ROOM -->
-        <div id="status-card" class="bento-card p-6 text-center space-y-2 border-b-8 border-b-indigo-400">
-            <p id="room-id-display" class="text-xs font-bold text-indigo-400 uppercase tracking-widest">Room: ----</p>
-            <h2 id="game-status" class="text-xl font-bold text-gray-800">En attente de l'hôte...</h2>
+        <p class="text-sm font-bold text-gray-400 mb-2 uppercase">Couleur du Buzzer</p>
+        <div class="grid grid-cols-4 gap-2 mb-8">
+            <button onclick="changeColor('#ef4444')" class="w-10 h-10 bg-red-500 rounded-full border-2 border-white"></button>
+            <button onclick="changeColor('#3b82f6')" class="w-10 h-10 bg-blue-500 rounded-full border-2 border-white"></button>
+            <button onclick="changeColor('#10b981')" class="w-10 h-10 bg-emerald-500 rounded-full border-2 border-white"></button>
+            <button onclick="changeColor('#f59e0b')" class="w-10 h-10 bg-amber-500 rounded-full border-2 border-white"></button>
         </div>
 
-        <!-- LE BUZZER (CENTRAL) -->
-        <div class="flex-1 flex items-center justify-center">
-            <button id="buzzer" class="buzzer-btn w-64 h-64 md:w-80 md:h-80 bg-red-500 rounded-full border-[12px] border-white shadow-[0_20px_0_0_#991b1b] flex items-center justify-center relative overflow-hidden group">
-                <div class="absolute inset-0 bg-white/10 group-hover:bg-transparent"></div>
-                <span class="text-white font-black text-4xl md:text-5xl tracking-tighter italic select-none">BUZZ!</span>
-            </button>
-        </div>
-
-        <!-- DERNIER MESSAGE / FEEDBACK -->
-        <div id="feedback-msg" class="bento-card p-4 text-center font-bold text-gray-500 italic">
-            Prépare tes oreilles... 🎧
-        </div>
-
+        <button id="toggle-dark" class="w-full p-4 mb-4 bg-gray-100 dark:bg-slate-700 rounded-2xl font-bold flex items-center justify-between dark:text-white">
+            <span>Mode Nuit</span> <span id="dark-status">🌙</span>
+        </button>
+        <button id="btn-logout" class="mt-auto w-full p-4 bg-rose-500 text-white rounded-2xl font-bold">Quitter 🚪</button>
     </div>
 
-    <!-- FOOTER : QUITTER -->
-    <div class="w-full text-center mt-4">
-        <button onclick="window.location.href='index.html'" class="text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-rose-500 underline">Quitter la partie</button>
+    <div class="flex-1 flex flex-col items-center justify-center gap-8">
+        <div id="status-text" class="text-2xl font-bold dark:text-white text-center">
+            Attente du Host...
+        </div>
+
+        <button id="main-buzzer" class="buzzer-btn w-64 h-64 bg-red-500 rounded-full border-[10px] border-white flex items-center justify-center">
+            <span class="text-white font-black text-4xl italic select-none">BUZZ!</span>
+        </button>
+
+        <div id="feedback" class="h-8 font-bold text-gray-400 italic"></div>
     </div>
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomId = urlParams.get('room');
-        const buzzerBtn = document.getElementById('buzzer');
+        const roomId = new URLSearchParams(window.location.search).get('room');
+        const buzzer = document.getElementById('main-buzzer');
+
+        // DRAWER LOGIC
+        document.getElementById('open-drawer').onclick = () => document.getElementById('drawer').classList.add('open');
+        document.getElementById('close-drawer').onclick = () => document.getElementById('drawer').classList.remove('open');
         
-        if (!roomId) window.location.href = 'index.html';
-        document.getElementById('room-id-display').innerText = `Room: ${roomId}`;
+        window.changeColor = (color) => {
+            buzzer.style.backgroundColor = color;
+            localStorage.setItem('buzzerColor', color);
+        };
+        if(localStorage.getItem('buzzerColor')) changeColor(localStorage.getItem('buzzerColor'));
 
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                window.location.href = 'index.html';
-                return;
-            }
+        // GAME LOGIC
+        auth.onAuthStateChanged(user => {
+            if(!user) return window.location.href = 'Auth.html';
             
-            const playerName = user.displayName || "Anonyme";
-            document.getElementById('player-name').innerText = playerName;
-
-            // Références Firebase
-            const roomRef = ref(db, `rooms/${roomId}`);
             const playerRef = ref(db, `rooms/${roomId}/players/${user.uid}`);
-
-            // Initialiser le joueur dans la room
-            update(playerRef, {
-                name: playerName,
-                score: 0,
-                lastActive: Date.now()
+            onValue(playerRef, snap => {
+                if(snap.exists()) document.getElementById('my-score').innerText = snap.val().score || 0;
             });
 
-            // Écouter le score en temps réel
-            onValue(playerRef, (snap) => {
-                if(snap.exists()) document.getElementById('player-score').innerText = snap.val().score || 0;
-            });
-
-            // Écouter l'état de la room (bloquer/débloquer buzzer)
-            onValue(roomRef, (snap) => {
-                const data = snap.val();
-                if (!data) return;
-
-                const statusText = document.getElementById('game-status');
-                const feedback = document.getElementById('feedback-msg');
-
-                if (data.state === 'playing') {
-                    statusText.innerText = "ÉCOUTE BIEN...";
-                    statusText.classList.replace('text-gray-800', 'text-green-500');
-                    buzzerBtn.classList.remove('buzzer-disabled');
-                    feedback.innerText = "C'est le moment !";
-                } else if (data.state === 'buzzed') {
-                    statusText.innerText = "TROP TARD !";
-                    statusText.classList.replace('text-green-500', 'text-gray-800');
-                    buzzerBtn.classList.add('buzzer-disabled');
-                    feedback.innerText = `${data.buzzerName} a la main ! 🎤`;
-                } else {
-                    statusText.innerText = "PRÊT POUR LA SUITE ?";
-                    buzzerBtn.classList.add('buzzer-disabled');
-                }
-            });
-
-            // Action du BUZZER
-            buzzerBtn.onclick = async () => {
-                const snap = await get(roomRef);
-                const data = snap.val();
-
-                if (data && data.state === 'playing') {
-                    // On enregistre le buzz
-                    await update(roomRef, {
+            buzzer.onclick = async () => {
+                const roomSnap = await get(ref(db, `rooms/${roomId}`));
+                if(roomSnap.val().state === 'playing') {
+                    update(ref(db, `rooms/${roomId}`), {
                         state: 'buzzed',
                         buzzerId: user.uid,
-                        buzzerName: playerName
+                        buzzerName: user.displayName
                     });
-                    
-                    // Petit effet haptique (vibration) sur mobile si supporté
-                    if ("vibrate" in navigator) navigator.vibrate(100);
+                    if("vibrate" in navigator) navigator.vibrate(100);
                 }
             };
+        });
+
+        onValue(ref(db, `rooms/${roomId}/state`), snap => {
+            const state = snap.val();
+            const status = document.getElementById('status-text');
+            if(state === 'playing') {
+                status.innerText = "À TOI DE JOUER !";
+                buzzer.style.opacity = "1";
+            } else {
+                status.innerText = "Buzzer verrouillé 🔒";
+                buzzer.style.opacity = "0.5";
+            }
         });
     </script>
 </body>
