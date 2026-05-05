@@ -159,7 +159,6 @@
             update(ref(db, `rooms/${roomId}`), { state: 'playing' });
             // Rediriger vers la page de gestion du blindtest (game-host.html par exemple)
             window.location.href = `game_host.html?room=${roomId}`;
-            alert("Lancement de la partie ! (Lien vers game-host à configurer)");
         };
 
         // GÉRER LA FERMETURE DE LA PAGE (Supprimer la room)
