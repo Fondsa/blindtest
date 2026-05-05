@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host - Blindtest Party 👑</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <style>
+        body { font-family: 'Fredoka', sans-serif; transition: 0.3s; }
+        .bento-card { border-radius: 28px; border: 4px solid #fff; box-shadow: 0 8px 0px rgba(0,0,0,0.05); }
+        .dark .bento-card { background: #1e293b; border-color: #334155; color: white; }
+        #drawer { transform: translateX(100%); transition: 0.4s ease; }
+        #drawer.open { transform: translateX(0); }
+        .song-item:hover { transform: scale(1.02); }
+    </style>
+</head>
+<body class="bg-rose-50 dark:bg-slate-900 min-h-screen p-4 md:p-8">
+
+    <!-- TOP BAR -->
+    <div class="flex justify-between items-center max-w-6xl mx-auto mb-8">
+        <div>
+            <h1 class="text-2xl font-bold dark:text-white">Room: <span id="room-id-display" class="text-rose-500 italic">----</span></h1>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Host Console</p>
+        </div>
+        <button id="open-drawer" class="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-2xl">☰</button>
+    </div>
+
+    <!-- DRAWER (Identique sur toutes les pages) -->
+    <div id="drawer" class="fixed top-0 right-0 h-full w-72 bg-white dark:bg-slate-800 z-50 p-8 flex flex-col shadow-2xl">
+        <button id="close-drawer" class="self-end text-xl dark:text-white">✕</button>
+        <h2 class="text-xl font-bold mb-8 dark:text-white">Réglages</h2>
+        <button id="toggle-dark" class="w-full p-4 mb-4 bg-gray-100 dark:bg-slate-700 rounded-2xl font-bold flex items-center justify-between dark:text-white">
+            <span>Mode Nuit</span> <span id="dark-status">🌙</span>
+        </button>
+        <button onclick="window.location.href='menu.html'" class="w-full p-4 mb-4 bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-200 rounded-2xl font-bold">Menu Principal</button>
+        <button id="btn-logout" class="mt-auto w-full p-4 bg-rose-500 text-white rounded-2xl font-bold">Déconnexion 🚪</button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        
+        <!-- SÉLECTION DE MUSIQUE -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bento-card bg-white p-6">
+                <div class="flex gap-4 mb-6">
+                    <button id="tab-base" class="flex-1 py-2 font-bold border-b-4 border-rose-500 text-rose-500">DE BASE</button>
+                    <button id="tab-import" class="flex-1 py-2 font-bold border-b-4 border-transparent text-gray-400">IMPORTÉS</button>
+                </div>
+                <div id="music-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
+                    <!-- Les musiques s'affichent ici -->
+                </div>
+            </div>
+
+            <!-- CONTRÔLES JEU -->
+            <div class="bento-card bg-white p-6 text-center space-y-4 border-b-[12px] border-b-indigo-400">
+                <h2 id="current-title" class="text-xl font-bold italic">Prêt à jouer ?</h2>
+                <div id="buzzer-alert" class="hidden p-4 bg-rose-500 text-white rounded-2xl animate-pulse font-bold text-2xl">
+                    <span id="buzzer-name">JOUEUR</span> A BUZZÉ !
+                </div>
+                <div class="flex gap-3 justify-center">
+                    <button id="btn-reveal" class="hidden px-6 py-3 bg-amber-400 text-white rounded-xl font-bold">RÉVÉLER</button>
+                    <button id="btn-reset" class="px-6 py-3 bg-gray-200 dark:bg-slate-700 rounded-xl font-bold">RESET</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEADERBOARD -->
+        <div class="bento-card bg-white p-6 border-b-[12px] border-b-emerald-400">
+            <h3 class="font-bold text-lg mb-4">Classement 🏆</h3>
+            <div id="leaderboard" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { ref, onValue, update, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+        let currentAudio = null;
+
+        // AUTH & DRAWER LOGIC
+        onAuthStateChanged(auth, u => { if(!u) window.location.href='Auth.html'; });
+        document.getElementById('open-drawer').onclick = () => document.getElementById('drawer').classList.add('open');
+        document.getElementById('close-drawer').onclick = () => document.getElementById('drawer').classList.remove('open');
+        document.getElementById('btn-logout').onclick = () => signOut(auth);
+        document.getElementById('toggle-dark').onclick = () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('dark', document.documentElement.classList.contains('dark'));
+        };
+        if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
+
+        // GAME LOGIC
+        if(!roomId) window.location.href = 'menu.html';
+        document.getElementById('room-id-display').innerText = roomId;
+
+        async function loadPlaylist(type) {
+            const path = type === 'base' ? 'base_musics' : 'library';
+            const snap = await get(ref(db, path));
+            const listDiv = document.getElementById('music-list');
+            listDiv.innerHTML = "";
+
+            if(snap.exists()){
+                Object.values(snap.val()).forEach(m => {
+                    const btn = document.createElement('button');
+                    btn.className = "song-item p-4 bg-gray-50 dark:bg-slate-700 rounded-2xl text-left font-bold text-sm border-2 border-transparent hover:border-rose-400 transition-all dark:text-white";
+                    btn.innerText = m.title;
+                    btn.onclick = () => playSong(m);
+                    listDiv.appendChild(btn);
+                });
+            }
+        }
+
+        function playSong(m) {
+            if(currentAudio) currentAudio.pause();
+            currentAudio = new Audio(m.audioData || m.url);
+            currentAudio.play();
+            document.getElementById('current-title').innerText = "Lecture en cours...";
+            update(ref(db, `rooms/${roomId}`), { state: 'playing', currentTitle: m.title, buzzerId: '', buzzerName: '' });
+        }
+
+        // Tabs
+        document.getElementById('tab-base').onclick = (e) => {
+            loadPlaylist('base');
+            e.target.classList.add('border-rose-500', 'text-rose-500');
+            document.getElementById('tab-import').classList.remove('border-rose-500', 'text-rose-500');
+        };
+        document.getElementById('tab-import').onclick = (e) => {
+            loadPlaylist('import');
+            e.target.classList.add('border-rose-500', 'text-rose-500');
+            document.getElementById('tab-base').classList.remove('border-rose-500', 'text-rose-500');
+        };
+
+        // Écoute de la room
+        onValue(ref(db, `rooms/${roomId}`), snap => {
+            const data = snap.val();
+            if(!data) return;
+            if(data.state === 'buzzed') {
+                if(currentAudio) currentAudio.pause();
+                document.getElementById('buzzer-alert').classList.remove('hidden');
+                document.getElementById('buzzer-name').innerText = data.buzzerName;
+                document.getElementById('btn-reveal').classList.remove('hidden');
+            } else {
+                document.getElementById('buzzer-alert').classList.add('hidden');
+            }
+            // Update leaderboard...
+        });
+
+        loadPlaylist('base');
+    </script>
+</body>
+</html>
