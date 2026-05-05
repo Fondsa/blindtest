@@ -1,151 +1,37 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Régie Game - Blindtest</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
-    <script>tailwind.config = { darkMode: 'class' }</script>
-    <style>
-        body { 
-            font-family: 'Fredoka', sans-serif; 
-            margin: 0; padding: 0; height: 100dvh; overflow: hidden; 
-            display: flex; flex-direction: column; background-color: #ffffff;
-            transition: background-color 0.3s ease;
-        }
-        .dark body { background-color: #000000; }
-        #bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; overflow: hidden; }
-        .cloud { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6; animation: floatClouds 15s infinite alternate ease-in-out; }
-        .cloud-pink { background: #ffdce0; width: 60vw; height: 60vw; top: -10%; left: -5%; }
-        .cloud-blue { background: #dcf2ff; width: 70vw; height: 70vw; bottom: -15%; right: -5%; }
+// Dans game_host.html, modifie la partie item.onclick :
+
+item.onclick = async () => {
+    try {
+        displayTitle.innerText = "Chargement...";
+        displayTitle.classList.add('loading-pulse');
         
-        @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
-
-        .btn-game { border-radius: 20px; color: white; font-weight: 700; border-bottom: 5px solid rgba(0,0,0,0.15); transition: 0.1s; text-transform: uppercase; font-size: 0.75rem; }
-        .btn-game:active { transform: translateY(3px); border-bottom-width: 2px; }
+        const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
         
-        .btn-play { background-color: #b9fbc0; color: #1a531b; }
-        .btn-pause { background-color: #fef08a; color: #854d0e; }
-        .btn-stop { background-color: #ff9aa2; }
-        .btn-reveal { background-color: #a0c4ff; }
-
-        .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
-        .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
-        
-        /* Personnalisation de la scrollbar pour rester propre */
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-    </style>
-</head>
-<body>
-
-    <div id="bg-container" class="dark:hidden">
-        <div class="cloud cloud-pink"></div>
-        <div class="cloud cloud-blue"></div>
-    </div>
-
-    <main class="relative z-10 flex flex-col h-full w-full p-4 space-y-3">
-        
-        <!-- HEADER -->
-        <div class="flex justify-between items-center">
-            <div class="bento-card px-4 py-2 text-xs font-bold dark:text-white uppercase tracking-tighter">Room: <span id="room-id" class="text-rose-400">---</span></div>
-            <button onclick="window.location.href='menu.html'" class="text-xs font-bold text-gray-400 underline">Quitter</button>
-        </div>
-
-        <!-- ECRAN DE RÉVÉLATION -->
-        <div class="bento-card p-4 text-center flex flex-col items-center justify-center min-h-[120px]">
-            <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic">Prêt à jouer ?</h2>
-            <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
-                <p id="artist-name" class="text-rose-500 font-bold text-md uppercase"></p>
-            </div>
-        </div>
-
-        <!-- DOUBLE PLAYLIST -->
-        <div class="flex-1 flex flex-col min-h-0 space-y-3">
-            <!-- SECTION BASE -->
-            <div class="bento-card p-3 flex flex-col min-h-[45%]">
-                <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📦 Musiques de Base (Admin)</h3>
-                <div id="list-base" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
-                    <!-- JS injecte ici -->
-                </div>
-            </div>
-
-            <!-- SECTION IMPORTÉ -->
-            <div class="bento-card p-3 flex flex-col min-h-[45%]">
-                <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📂 Mes Imports (Compte)</h3>
-                <div id="list-imported" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
-                    <!-- JS injecte ici -->
-                </div>
-            </div>
-        </div>
-
-        <!-- RÉGIE AUDIO -->
-        <div class="grid grid-cols-4 gap-2 h-16">
-            <button id="ctrl-play" class="btn-game btn-play">Play</button>
-            <button id="ctrl-pause" class="btn-game btn-pause">Pause</button>
-            <button id="ctrl-stop" class="btn-game btn-stop">Stop</button>
-            <button id="ctrl-reveal" class="btn-game btn-reveal">Révéler</button>
-        </div>
-
-    </main>
-
-    <audio id="audio-player"></audio>
-
-    <script type="module">
-        import { db, auth } from './firebase-config.js';
-        import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomId = urlParams.get('room');
-        const audio = document.getElementById('audio-player');
-        document.getElementById('room-id').innerText = roomId;
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user) return;
-
-            // 1. CHARGER LES MUSIQUES DE BASE
-            onValue(ref(db, 'musics/base'), (snapshot) => {
-                renderList(snapshot, 'list-base');
+        if (trackSnap.exists()) {
+            const audioData = trackSnap.val();
+            audio.src = audioData;
+            displayTitle.innerText = "Prêt !";
+            displayTitle.classList.remove('loading-pulse');
+            document.getElementById('artist-name').innerText = track.title + (track.artist ? " - " + track.artist : "");
+            document.getElementById('reveal-zone').classList.add('hidden');
+            
+            // MISE À JOUR : On envoie le son et l'heure de départ précise
+            update(ref(db, `rooms/${roomId}`), { 
+                state: 'playing', 
+                currentTrack: track.title,
+                currentAudio: audioData, // On partage le Base64 pour que les joueurs l'aient
+                startTime: Date.now(),    // Le signal de départ
+                buzzedBy: null            // On reset le buzzer pour la nouvelle manche
             });
-
-            // 2. CHARGER LES MUSIQUES IMPORTÉES DU COMPTE
-            onValue(ref(db, `musics/users/${user.uid}`), (snapshot) => {
-                renderList(snapshot, 'list-imported');
-            });
-        });
-
-        function renderList(snapshot, elementId) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = "";
-            if (snapshot.exists()) {
-                Object.entries(snapshot.val()).forEach(([id, track]) => {
-                    const item = document.createElement('div');
-                    item.className = "p-2 bg-white/40 dark:bg-white/5 rounded-xl cursor-pointer hover:bg-white/80 transition-all text-sm font-bold dark:text-white border-l-4 border-transparent hover:border-rose-300";
-                    item.innerText = track.title;
-                    item.onclick = () => {
-                        audio.src = track.url;
-                        document.getElementById('display-title').innerText = "Morceau chargé !";
-                        document.getElementById('artist-name').innerText = track.title + (track.artist ? " - " + track.artist : "");
-                        document.getElementById('reveal-zone').classList.add('hidden');
-                        // Reset l'état du jeu pour ce morceau
-                        update(ref(db, `rooms/${roomId}`), { state: 'playing', currentTrack: track.title });
-                    };
-                    container.appendChild(item);
-                });
-            } else {
-                container.innerHTML = `<p class="text-[10px] text-gray-400 italic text-center mt-2">Aucun titre trouvé</p>`;
-            }
         }
+    } catch (e) {
+        displayTitle.innerText = "Erreur de chargement";
+        console.error(e);
+    }
+};
 
-        // COMMANDES AUDIO
-        document.getElementById('ctrl-play').onclick = () => audio.play();
-        document.getElementById('ctrl-pause').onclick = () => audio.pause();
-        document.getElementById('ctrl-stop').onclick = () => { audio.pause(); audio.currentTime = 0; };
-        document.getElementById('ctrl-reveal').onclick = () => document.getElementById('reveal-zone').classList.toggle('hidden');
-
-        if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
-    </script>
-</body>
-</html>
+// Modifie aussi ton bouton Play pour qu'il déclenche le son chez tout le monde si besoin
+document.getElementById('ctrl-play').onclick = () => {
+    audio.play();
+    update(ref(db, `rooms/${roomId}`), { status: 'active' }); 
+};
