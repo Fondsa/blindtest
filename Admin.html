@@ -1,0 +1,35 @@
+<!-- Style similaire ... -->
+<body class="bg-amber-50 p-6">
+    <div class="max-w-4xl mx-auto space-y-6">
+        <h1 class="text-3xl font-bold">Panel Admin 🛠️</h1>
+        
+        <!-- AJOUT LISTE DE BASE -->
+        <div class="bento-card bg-white p-6 space-y-4">
+            <h3 class="font-bold">Ajouter à la liste "De Base" (Officiel)</h3>
+            <input type="text" id="base-title" placeholder="Titre" class="w-full p-3 border rounded-xl">
+            <input type="text" id="base-url" placeholder="Lien MP3 (GitHub Raw)" class="w-full p-3 border rounded-xl">
+            <button id="add-base" class="w-full py-3 bg-amber-500 text-white rounded-xl font-bold">AJOUTER</button>
+        </div>
+
+        <!-- GESTION COMPTES -->
+        <div class="bento-card bg-white p-6">
+            <h3 class="font-bold mb-4">Utilisateurs</h3>
+            <div id="users-list" class="space-y-2">
+                <!-- On listerait les comptes ici avec un bouton supprimer -->
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        document.getElementById('add-base').onclick = async () => {
+            const title = document.getElementById('base-title').value;
+            const url = document.getElementById('base-url').value;
+            await push(ref(db, 'base_musics'), { title, url });
+            alert("Ajouté à la playlist officielle !");
+        };
+        // Logique suppression compte : demande l'UID via un prompt et utilise l'Admin SDK (ou désactivation via DB)
+    </script>
+</body>
