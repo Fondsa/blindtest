@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Upload - Blindtest</title>
+    <title>Upload Base64 - Blindtest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <script>tailwind.config = { darkMode: 'class' }</script>
@@ -22,7 +22,6 @@
         
         @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
 
-        /* 🎮 BOUTON PHYSIQUE */
         .btn-game {
             border-radius: 20px;
             color: white;
@@ -32,7 +31,8 @@
             text-transform: uppercase;
         }
         .btn-game:active { transform: translateY(3px); border-bottom-width: 2px; }
-        .btn-primary { background-color: #a0c4ff; } /* Bleu */
+        .btn-primary { background-color: #a0c4ff; }
+        .btn-disabled { background-color: #d1d5db; border-bottom: none; transform: none; cursor: not-allowed; }
 
         .bento-card {
             background: rgba(255, 255, 255, 0.5);
@@ -42,7 +42,6 @@
         }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
 
-        /* INPUT STYLISÉ */
         input::file-selector-button {
             background: #ff9aa2;
             border: none;
@@ -65,102 +64,128 @@
     <main class="relative z-10 flex flex-col h-full w-full p-6 items-center justify-center">
         
         <div class="w-full max-w-md space-y-6">
-            <!-- TITRE -->
             <div class="text-center">
-                <h1 class="text-4xl font-black text-gray-800 dark:text-white italic tracking-tighter">IMPORTER</h1>
-                <p class="text-gray-500 dark:text-gray-400 font-medium">Ajoute tes sons à ta bibliothèque</p>
+                <h1 class="text-4xl font-black text-gray-800 dark:text-white italic tracking-tighter uppercase">Importer</h1>
+                <p class="text-gray-500 dark:text-gray-400 font-medium text-sm">Le son sera converti en texte (Base64)</p>
             </div>
 
-            <!-- FORMULAIRE BENTO -->
             <div class="bento-card p-6 space-y-4">
+                <!-- Champ Titre -->
                 <div>
-                    <label class="block text-xs font-black text-gray-400 uppercase mb-1">Titre de la musique</label>
-                    <input type="text" id="track-title" placeholder="Ex: Musique de fou" 
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Titre de la musique</label>
+                    <input type="text" id="track-title" placeholder="Ex: Pokémon Theme" 
                         class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-rose-300 outline-none">
                 </div>
 
+                <!-- Champ Artiste -->
                 <div>
-                    <label class="block text-xs font-black text-gray-400 uppercase mb-1">Artiste (Optionnel)</label>
-                    <input type="text" id="track-artist" placeholder="Ex: Jean Bon" 
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Artiste</label>
+                    <input type="text" id="track-artist" placeholder="Ex: Jason Paige" 
                         class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-rose-300 outline-none">
                 </div>
 
+                <!-- Champ Fichier -->
                 <div>
-                    <label class="block text-xs font-black text-gray-400 uppercase mb-1">Fichier Audio</label>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Fichier Audio (Max 2 Mo)</label>
                     <input type="file" id="track-file" accept="audio/*" 
                         class="w-full text-sm text-gray-500 dark:text-gray-300">
                 </div>
 
-                <div id="upload-status" class="hidden text-center text-xs font-bold py-2 rounded-lg"></div>
+                <!-- Status Message -->
+                <div id="upload-status" class="hidden text-center text-xs font-bold py-3 rounded-xl transition-all"></div>
 
-                <button id="btn-upload" class="btn-game btn-primary w-full py-4 mt-2">Envoyer vers mon compte</button>
+                <!-- Bouton Action -->
+                <button id="btn-upload" class="btn-game btn-primary w-full py-4 mt-2">Enregistrer en base</button>
             </div>
 
-            <!-- RETOUR -->
             <button onclick="window.location.href='menu.html'" class="w-full text-gray-400 font-bold text-sm hover:underline">Retour au menu</button>
         </div>
 
     </main>
 
     <script type="module">
-        import { db, auth, storage } from './firebase-config.js'; // Assure-toi que storage est exporté dans ton config
-        import { ref as dbRef, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        import { db, auth } from './firebase-config.js';
+        import { ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const btnUpload = document.getElementById('btn-upload');
         const status = document.getElementById('upload-status');
+        let currentUserId = "invite";
+
+        // Vérifier la connexion
+        onAuthStateChanged(auth, (user) => {
+            if (user) currentUserId = user.uid;
+        });
+
+        // Fonction de conversion magique
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
 
         btnUpload.onclick = async () => {
-            const user = auth.currentUser;
             const file = document.getElementById('track-file').files[0];
-            const title = document.getElementById('track-title').value;
-            const artist = document.getElementById('track-artist').value;
+            const title = document.getElementById('track-title').value.trim();
+            const artist = document.getElementById('track-artist').value.trim();
 
-            if (!user || !file || !title) {
-                showStatus("Remplis tout ! (Et connecte-toi)", "bg-red-100 text-red-600");
+            // Validations
+            if (!file || !title) {
+                showStatus("Titre et fichier requis !", "bg-red-100 text-red-600");
+                return;
+            }
+
+            if (file.size > 2.5 * 1024 * 1024) { // 2.5 Mo max conseillé
+                showStatus("Fichier trop lourd (Max 2.5 Mo)", "bg-red-100 text-red-600");
                 return;
             }
 
             try {
+                // UI State: Loading
                 btnUpload.disabled = true;
-                btnUpload.innerText = "Téléchargement...";
-                showStatus("Envoi en cours...", "bg-blue-100 text-blue-600");
+                btnUpload.classList.add('btn-disabled');
+                btnUpload.innerText = "Traitement...";
+                showStatus("Conversion du son en cours...", "bg-blue-100 text-blue-600 animate-pulse");
 
-                // 1. Upload vers Firebase Storage
-                const storagePath = `musics/${user.uid}/${Date.now()}_${file.name}`;
-                const fileRef = sRef(storage, storagePath);
-                await uploadBytes(fileRef, file);
-                const downloadURL = await getDownloadURL(fileRef);
+                // 1. Conversion Base64
+                const base64Data = await toBase64(file);
 
-                // 2. Enregistrer l'URL et les infos dans Realtime Database
-                const userMusicRef = dbRef(db, `musics/users/${user.uid}`);
+                // 2. Envoi Firebase
+                showStatus("Envoi vers la base de données...", "bg-yellow-100 text-yellow-700");
+                const userMusicRef = ref(db, `musics/users/${currentUserId}`);
+                
                 await push(userMusicRef, {
                     title: title,
-                    artist: artist,
-                    url: downloadURL,
+                    artist: artist || "Inconnu",
+                    url: base64Data, // C'est ici que le fichier est stocké en texte
                     createdAt: Date.now()
                 });
 
-                showStatus("Musique ajoutée avec succès !", "bg-green-100 text-green-600");
-                // Reset formulaire
+                showStatus("Terminé ! Musique ajoutée.", "bg-green-100 text-green-700");
+                
+                // Reset Form
                 document.getElementById('track-title').value = "";
                 document.getElementById('track-artist').value = "";
                 document.getElementById('track-file').value = "";
-                
+
             } catch (error) {
                 console.error(error);
-                showStatus("Erreur lors de l'envoi", "bg-red-100 text-red-600");
+                showStatus("Erreur : " + error.message, "bg-red-100 text-red-600");
             } finally {
                 btnUpload.disabled = false;
-                btnUpload.innerText = "Envoyer vers mon compte";
+                btnUpload.classList.remove('btn-disabled');
+                btnUpload.innerText = "Enregistrer en base";
             }
         };
 
         function showStatus(msg, classes) {
             status.innerText = msg;
-            status.className = `text-center text-xs font-bold py-2 rounded-lg ${classes}`;
+            status.className = `text-center text-xs font-bold py-3 rounded-xl ${classes}`;
             status.classList.remove('hidden');
         }
+
+        if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
     </script>
 </body>
 </html>
