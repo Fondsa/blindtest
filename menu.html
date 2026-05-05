@@ -3,80 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu - Blindtest</title>
+    <title>Menu - Blindtest Party 🎶</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
-        body { font-family: 'Fredoka', sans-serif; transition: 0.3s; }
-        .bento-card { border-radius: 32px; border: 4px solid #fff; box-shadow: 0 10px 0px rgba(0,0,0,0.05); }
-        .dark .bento-card { background: #1e293b; border-color: #334155; color: white; }
-        #drawer { transform: translateX(100%); transition: 0.4s ease; }
+        body { 
+            font-family: 'Fredoka', sans-serif; 
+            /* Retour du fond magnifique */
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100dvh; overflow-x: hidden;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .dark body { background: #0f172a; } /* Fond fixe en mode sombre pour le confort */
+
+        .bento-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 32px; border: 4px solid #ffffff;
+            box-shadow: 0 10px 0px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .dark .bento-card { background: rgba(30, 41, 59, 0.8); border-color: #334155; color: white; }
+
+        /* Titre qui bouge */
+        .floating-title {
+            animation: floating 3s ease-in-out infinite;
+            display: inline-block;
+        }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px) rotate(-2deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+
+        #drawer { transform: translateX(100%); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         #drawer.open { transform: translateX(0); }
     </style>
 </head>
-<body class="bg-rose-50 dark:bg-slate-900 min-h-screen p-6">
-
-    <!-- TOP BAR -->
-    <!-- test -->
-    <div class="flex justify-between items-center max-w-4xl mx-auto mb-10">
-        <h1 class="text-2xl font-bold dark:text-white">Blindtest <span class="text-rose-500">Party</span></h1>
-        <button id="open-drawer" class="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-2xl">☰</button>
-    </div>
+<body class="p-6">
 
     <!-- DRAWER -->
     <div id="drawer" class="fixed top-0 right-0 h-full w-72 bg-white dark:bg-slate-800 z-50 p-8 flex flex-col shadow-2xl">
-        <button id="close-drawer" class="self-end text-xl dark:text-white">✕</button>
-        <h2 class="text-xl font-bold mb-8 dark:text-white">Réglages</h2>
+        <button id="close-drawer" class="self-end text-2xl dark:text-white">✕</button>
+        <h2 class="text-xl font-bold mb-8 dark:text-white uppercase tracking-tighter">Réglages</h2>
         
-        <button id="toggle-dark" class="w-full p-4 mb-4 bg-gray-100 dark:bg-slate-700 rounded-2xl font-bold flex items-center justify-between dark:text-white">
-            <span>Mode Nuit</span>
-            <span id="dark-status">🌙</span>
-        </button>
-
-        <a href="Admin.html" id="admin-link" class="hidden w-full p-4 mb-4 bg-amber-100 text-amber-700 rounded-2xl font-bold text-center">Panel Admin 🛠️</a>
-
-        <div class="mt-auto">
-            <button id="btn-logout" class="w-full p-4 bg-rose-100 text-rose-600 rounded-2xl font-bold">Déconnexion 🚪</button>
+        <div class="space-y-4">
+            <button id="toggle-dark" class="w-full p-4 bg-gray-100 dark:bg-slate-700 rounded-2xl font-bold flex items-center justify-between dark:text-white">
+                <span>Mode Nuit</span> <span id="dark-icon">🌙</span>
+            </button>
+            <a href="Admin.html" id="admin-btn" class="hidden w-full p-4 bg-amber-400 text-amber-900 rounded-2xl font-bold block text-center">Panel Admin 🛠️</a>
         </div>
+
+        <button id="btn-logout" class="mt-auto w-full p-4 bg-rose-500 text-white rounded-2xl font-bold shadow-[0_4px_0_0_#be123c]">DÉCONNEXION 🚪</button>
     </div>
 
-    <!-- CONTENU MENU -->
-    <div class="max-w-xl mx-auto space-y-6">
-        <div class="bento-card bg-white p-8 text-center">
-            <h2 class="text-2xl font-bold mb-4">Salut, <span id="user-name">...</span> !</h2>
-            <div class="grid grid-cols-1 gap-4">
-                <button onclick="window.location.href='host.html'" class="p-6 bg-indigo-500 text-white rounded-3xl font-bold text-xl">CRÉER UNE PARTIE</button>
-                <button onclick="window.location.href='player.html'" class="p-6 bg-emerald-500 text-white rounded-3xl font-bold text-xl">REJOINDRE</button>
-                <button onclick="window.location.href='Upload.html'" class="p-6 bg-white dark:bg-slate-700 border-4 border-rose-200 rounded-3xl font-bold text-xl">BIBLIOTHÈQUE 🎶</button>
+    <!-- CONTENU -->
+    <div class="max-w-4xl mx-auto flex flex-col items-center">
+        
+        <div class="w-full flex justify-end mb-4">
+            <button id="open-drawer" class="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-lg text-2xl">☰</button>
+        </div>
+
+        <div class="text-center mb-12">
+            <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter floating-title drop-shadow-2xl">
+                BLIND<span class="text-yellow-300">TEST</span>
+            </h1>
+            <p class="text-white font-bold text-xl opacity-90 mt-4 uppercase tracking-widest">Party Edition</p>
+        </div>
+
+        <div class="bento-card p-8 w-full max-w-md space-y-6">
+            <div class="text-center mb-4">
+                <p class="text-gray-500 dark:text-gray-400 font-bold uppercase text-xs tracking-widest">Connecté en tant que</p>
+                <h2 id="user-display" class="text-2xl font-black text-rose-500 italic">...</h2>
+            </div>
+
+            <div class="grid gap-4">
+                <button onclick="window.location.href='host.html'" class="py-5 bg-indigo-500 text-white rounded-2xl font-bold text-xl shadow-[0_6px_0_0_#4338ca] hover:scale-105 transition-transform">CRÉER UNE ROOM</button>
+                <button onclick="window.location.href='player.html'" class="py-5 bg-emerald-500 text-white rounded-2xl font-bold text-xl shadow-[0_6px_0_0_#059669] hover:scale-105 transition-transform">REJOINDRE</button>
+                <button onclick="window.location.href='Upload.html'" class="py-5 bg-white dark:bg-slate-700 border-4 border-rose-200 text-rose-500 dark:text-rose-300 rounded-2xl font-bold text-xl hover:scale-105 transition-transform">IMPORT MP3 🎶</button>
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { auth, db } from './firebase-config.js';
+        import { auth } from './firebase-config.js';
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        const drawer = document.getElementById('drawer');
+        // Redirection si pas connecté
         onAuthStateChanged(auth, (user) => {
-            if(!user) window.location.href = 'Auth.html';
-            document.getElementById('user-name').innerText = user.displayName;
-            // Admin simple check (tu peux changer l'email)
-            if(user.email === "tonadmin@mail.com") document.getElementById('admin-link').classList.remove('hidden');
+            if (!user) window.location.href = 'index.html'; // index.html est ton Auth.html maintenant
+            document.getElementById('user-display').innerText = user.displayName;
+            if(user.email === "tonadmin@mail.com") document.getElementById('admin-btn').classList.remove('hidden');
         });
 
-        // Toggle Drawer
-        document.getElementById('open-drawer').onclick = () => drawer.classList.add('open');
-        document.getElementById('close-drawer').onclick = () => drawer.classList.remove('open');
+        // Drawer
+        const drw = document.getElementById('drawer');
+        document.getElementById('open-drawer').onclick = () => drw.classList.add('open');
+        document.getElementById('close-drawer').onclick = () => drw.classList.remove('open');
 
         // Dark Mode
-        const toggleDark = document.getElementById('toggle-dark');
-        toggleDark.onclick = () => {
+        document.getElementById('toggle-dark').onclick = () => {
             document.documentElement.classList.toggle('dark');
             const isDark = document.documentElement.classList.contains('dark');
-            document.getElementById('dark-status').innerText = isDark ? "☀️" : "🌙";
+            document.getElementById('dark-icon').innerText = isDark ? "☀️" : "🌙";
             localStorage.setItem('dark', isDark);
         };
         if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
