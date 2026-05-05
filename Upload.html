@@ -2,112 +2,165 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload - Blindtest 🎶</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Upload - Blindtest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
         body { 
-            font-family: 'Fredoka', sans-serif;
-            background: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
-            height: 100dvh; display: flex; align-items: center; justify-content: center;
+            font-family: 'Fredoka', sans-serif; 
+            margin: 0; padding: 0; height: 100dvh; overflow: hidden; 
+            display: flex; flex-direction: column; background-color: #ffffff;
+            transition: background-color 0.3s ease;
         }
+        .dark body { background-color: #000000; }
+        #bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; overflow: hidden; }
+        .cloud { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6; animation: floatClouds 15s infinite alternate ease-in-out; }
+        .cloud-pink { background: #ffdce0; width: 60vw; height: 60vw; top: -10%; left: -5%; }
+        .cloud-blue { background: #dcf2ff; width: 70vw; height: 70vw; bottom: -15%; right: -5%; }
+        
+        @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
+
+        /* 🎮 BOUTON PHYSIQUE */
+        .btn-game {
+            border-radius: 20px;
+            color: white;
+            font-weight: 700;
+            border-bottom: 5px solid rgba(0,0,0,0.15);
+            transition: all 0.1s ease;
+            text-transform: uppercase;
+        }
+        .btn-game:active { transform: translateY(3px); border-bottom-width: 2px; }
+        .btn-primary { background-color: #a0c4ff; } /* Bleu */
+
         .bento-card {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 32px; border: 4px solid #ffffff;
-            box-shadow: 0 10px 0px rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
         }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #f43f5e;
-            border-radius: 50%;
-            width: 30px; height: 30px;
-            animation: spin 1s linear infinite;
-            display: none;
+        .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
+
+        /* INPUT STYLISÉ */
+        input::file-selector-button {
+            background: #ff9aa2;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+            cursor: pointer;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="p-4">
+<body>
 
-    <div class="max-w-md w-full space-y-6">
-        <div class="text-center">
-            <h1 class="text-4xl font-bold text-gray-800 tracking-tighter">Import <span class="text-rose-500 italic">Direct</span></h1>
-            <p class="text-gray-500 font-medium">Le MP3 est stocké en texte dans la DB !</p>
-        </div>
-
-        <div class="bento-card p-8 text-center space-y-6">
-            <div id="drop-zone" class="border-4 border-dashed border-rose-200 rounded-3xl p-10 cursor-pointer hover:bg-rose-50 transition-colors">
-                <span class="text-6xl">📥</span>
-                <p class="mt-4 font-bold text-gray-600">Clique pour choisir un MP3</p>
-                <p class="text-xs text-rose-400 mt-2 uppercase font-black tracking-widest">Max 30-40 secondes</p>
-                <input type="file" id="fileInp" accept="audio/mpeg" class="hidden">
-            </div>
-
-            <div id="loading-area" class="flex flex-col items-center gap-2 hidden">
-                <div class="loader"></div>
-                <p class="text-sm font-bold text-rose-500 uppercase">Conversion en texte...</p>
-            </div>
-        </div>
-
-        <button onclick="window.location.href='index.html'" class="w-full text-center text-xs font-bold text-gray-400 uppercase underline">Retour au menu</button>
+    <div id="bg-container" class="dark:hidden">
+        <div class="cloud cloud-pink"></div>
+        <div class="cloud cloud-blue"></div>
     </div>
 
+    <main class="relative z-10 flex flex-col h-full w-full p-6 items-center justify-center">
+        
+        <div class="w-full max-w-md space-y-6">
+            <!-- TITRE -->
+            <div class="text-center">
+                <h1 class="text-4xl font-black text-gray-800 dark:text-white italic tracking-tighter">IMPORTER</h1>
+                <p class="text-gray-500 dark:text-gray-400 font-medium">Ajoute tes sons à ta bibliothèque</p>
+            </div>
+
+            <!-- FORMULAIRE BENTO -->
+            <div class="bento-card p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-black text-gray-400 uppercase mb-1">Titre de la musique</label>
+                    <input type="text" id="track-title" placeholder="Ex: Musique de fou" 
+                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-rose-300 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black text-gray-400 uppercase mb-1">Artiste (Optionnel)</label>
+                    <input type="text" id="track-artist" placeholder="Ex: Jean Bon" 
+                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-rose-300 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black text-gray-400 uppercase mb-1">Fichier Audio</label>
+                    <input type="file" id="track-file" accept="audio/*" 
+                        class="w-full text-sm text-gray-500 dark:text-gray-300">
+                </div>
+
+                <div id="upload-status" class="hidden text-center text-xs font-bold py-2 rounded-lg"></div>
+
+                <button id="btn-upload" class="btn-game btn-primary w-full py-4 mt-2">Envoyer vers mon compte</button>
+            </div>
+
+            <!-- RETOUR -->
+            <button onclick="window.location.href='menu.html'" class="w-full text-gray-400 font-bold text-sm hover:underline">Retour au menu</button>
+        </div>
+
+    </main>
+
     <script type="module">
-        import { db, auth } from './firebase-config.js';
-        import { ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { db, auth, storage } from './firebase-config.js'; // Assure-toi que storage est exporté dans ton config
+        import { ref as dbRef, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        const fileInp = document.getElementById('fileInp');
-        const dropZone = document.getElementById('drop-zone');
-        const loadingArea = document.getElementById('loading-area');
+        const btnUpload = document.getElementById('btn-upload');
+        const status = document.getElementById('upload-status');
 
-        // Sécurité : Faut être loggé
-        onAuthStateChanged(auth, (user) => { if (!user) window.location.href = 'index.html'; });
+        btnUpload.onclick = async () => {
+            const user = auth.currentUser;
+            const file = document.getElementById('track-file').files[0];
+            const title = document.getElementById('track-title').value;
+            const artist = document.getElementById('track-artist').value;
 
-        dropZone.onclick = () => fileInp.click();
-
-        fileInp.onchange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            // Limite de taille pour la Realtime DB (environ 1.5 Mo max pour être safe)
-            if (file.size > 1500000) {
-                alert("❌ Fichier trop lourd ! Coupe ton MP3 (max 30-40 sec) pour qu'il rentre dans la base de données gratuite.");
+            if (!user || !file || !title) {
+                showStatus("Remplis tout ! (Et connecte-toi)", "bg-red-100 text-red-600");
                 return;
             }
 
-            loadingArea.classList.remove('hidden');
-            dropZone.classList.add('hidden');
+            try {
+                btnUpload.disabled = true;
+                btnUpload.innerText = "Téléchargement...";
+                showStatus("Envoi en cours...", "bg-blue-100 text-blue-600");
 
-            const reader = new FileReader();
-            
-            // Étape clé : Conversion du fichier en Base64
-            reader.readAsDataURL(file);
-            
-            reader.onload = async () => {
-                const base64String = reader.result;
+                // 1. Upload vers Firebase Storage
+                const storagePath = `musics/${user.uid}/${Date.now()}_${file.name}`;
+                const fileRef = sRef(storage, storagePath);
+                await uploadBytes(fileRef, file);
+                const downloadURL = await getDownloadURL(fileRef);
 
-                try {
-                    const libraryRef = ref(db, 'library');
-                    const newMusicRef = push(libraryRef);
-                    
-                    await set(newMusicRef, {
-                        title: file.name.replace('.mp3', ''),
-                        audioData: base64String, // On stocke tout le son ici
-                        addedBy: auth.currentUser.displayName || "Anonyme",
-                        timestamp: Date.now()
-                    });
+                // 2. Enregistrer l'URL et les infos dans Realtime Database
+                const userMusicRef = dbRef(db, `musics/users/${user.uid}`);
+                await push(userMusicRef, {
+                    title: title,
+                    artist: artist,
+                    url: downloadURL,
+                    createdAt: Date.now()
+                });
 
-                    alert("✅ Musique enregistrée directement dans Firebase !");
-                    window.location.reload();
-                } catch (error) {
-                    alert("Erreur Firebase : " + error.message);
-                    loadingArea.classList.add('hidden');
-                    dropZone.classList.remove('hidden');
-                }
-            };
+                showStatus("Musique ajoutée avec succès !", "bg-green-100 text-green-600");
+                // Reset formulaire
+                document.getElementById('track-title').value = "";
+                document.getElementById('track-artist').value = "";
+                document.getElementById('track-file').value = "";
+                
+            } catch (error) {
+                console.error(error);
+                showStatus("Erreur lors de l'envoi", "bg-red-100 text-red-600");
+            } finally {
+                btnUpload.disabled = false;
+                btnUpload.innerText = "Envoyer vers mon compte";
+            }
         };
+
+        function showStatus(msg, classes) {
+            status.innerText = msg;
+            status.className = `text-center text-xs font-bold py-2 rounded-lg ${classes}`;
+            status.classList.remove('hidden');
+        }
     </script>
 </body>
 </html>
