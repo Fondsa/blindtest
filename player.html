@@ -40,14 +40,14 @@
             border: none;
             box-shadow: 0 15px 0 #ffb7bc, 0 20px 30px rgba(255, 154, 162, 0.4);
             cursor: pointer;
-            transition: all 0.1s active;
+            transition: all 0.1s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             outline: none;
             -webkit-tap-highlight-color: transparent;
         }
-        .buzzer-btn:active {
+        .buzzer-btn:active:not(:disabled) {
             transform: translateY(10px);
             box-shadow: 0 5px 0 #ffb7bc, 0 10px 15px rgba(255, 154, 162, 0.2);
         }
@@ -56,6 +56,7 @@
             box-shadow: 0 10px 0 #9ca3af;
             opacity: 0.6;
             cursor: not-allowed;
+            transform: translateY(5px);
         }
 
         .bento-card {
@@ -80,21 +81,21 @@
         <div class="w-full flex justify-between items-center">
             <div class="bento-card px-4 py-2 flex items-center gap-2">
                 <div id="player-color" class="w-3 h-3 rounded-full bg-gray-400"></div>
-                <span id="player-name" class="text-xs font-bold dark:text-white uppercase">Joueur</span>
+                <span id="player-name" class="text-xs font-bold dark:text-white uppercase italic">Chargement...</span>
             </div>
             <div class="bento-card px-4 py-2">
-                <span id="player-score" class="text-xs font-black text-rose-400">0 PTS</span>
+                <span id="player-score" class="text-xs font-black text-rose-400 italic">0 PTS</span>
             </div>
         </div>
 
         <!-- ZONE CENTRALE : LE BUZZER -->
         <div class="flex flex-col items-center space-y-8">
-            <div id="status-text" class="text-xl font-black text-gray-800 dark:text-white uppercase italic tracking-tighter text-center">
-                Écoute bien...
+            <div id="status-text" class="text-xl font-black text-gray-800 dark:text-white uppercase italic tracking-tighter text-center transition-colors duration-300">
+                En attente de l'hôte...
             </div>
             
-            <button id="buzzer" class="buzzer-btn">
-                <span class="text-white font-black text-3xl italic tracking-tighter">BUZZ !</span>
+            <button id="buzzer" class="buzzer-btn" disabled>
+                <span class="text-white font-black text-3xl italic tracking-tighter uppercase">Buzz !</span>
             </button>
         </div>
 
@@ -109,64 +110,89 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, onValue, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // APPLIQUER THÈME SOMBRES
+        // THÈME SOMBRE
         if (localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
 
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
-        const playerId = localStorage.getItem('playerId') || auth.currentUser?.uid;
+        const playerId = localStorage.getItem('playerId');
 
         const buzzerBtn = document.getElementById('buzzer');
         const statusText = document.getElementById('status-text');
+        const audioPlayer = new Audio();
+        
+        let canBuzz = false;
 
         if (!roomId || !playerId) {
             window.location.href = 'menu.html';
         }
-
         document.getElementById('display-room').innerText = roomId;
 
-        // 1. RÉCUPÉRER LES INFOS DU JOUEUR (Nom, Couleur, Score)
-        onValue(ref(db, `rooms/${roomId}/players/${playerId}`), (snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                document.getElementById('player-name').innerText = data.pseudo;
-                document.getElementById('player-score').innerText = `${data.score || 0} PTS`;
-                document.getElementById('player-color').style.backgroundColor = data.color;
-            }
-        });
+        // 1. SYNC AUDIO ET ÉTAT DU JEU
+        onValue(ref(db, `rooms/${roomId}`), (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
 
-        // 2. ÉCOUTER L'ÉTAT DE LA ROOM (Si quelqu'un a déjà buzzé)
-        onValue(ref(db, `rooms/${roomId}/buzzedBy`), (snapshot) => {
-            if (snapshot.exists()) {
-                const buzzedId = snapshot.val();
-                if (buzzedId === playerId) {
+            // Gestion de la musique
+            if (data.state === 'playing' && data.currentAudio) {
+                // On détecte si un nouveau morceau est lancé (via le timestamp startTime)
+                if (audioPlayer.dataset.lastStart !== String(data.startTime)) {
+                    audioPlayer.src = data.currentAudio;
+                    audioPlayer.dataset.lastStart = data.startTime;
+                    audioPlayer.play().catch(e => console.log("L'audio attend un clic utilisateur."));
+                    
+                    // Activer le buzz seulement quand la musique commence
+                    canBuzz = true;
+                    buzzerBtn.disabled = false;
+                    statusText.innerText = "ÉCOUTE BIEN...";
+                    statusText.className = "text-xl font-black text-gray-800 dark:text-white uppercase italic tracking-tighter text-center";
+                }
+            }
+
+            // Gestion du Buzz
+            if (data.buzzedBy) {
+                audioPlayer.pause();
+                canBuzz = false;
+                buzzerBtn.disabled = true;
+
+                if (data.buzzedBy === playerId) {
                     statusText.innerText = "C'EST À TOI !";
-                    statusText.classList.add('text-green-500');
-                    buzzerBtn.disabled = true;
+                    statusText.className = "text-xl font-black text-green-500 uppercase italic tracking-tighter text-center";
                 } else {
                     statusText.innerText = "TROP TARD !";
-                    statusText.classList.remove('text-green-500');
-                    buzzerBtn.disabled = true;
+                    statusText.className = "text-xl font-black text-rose-500 uppercase italic tracking-tighter text-center opacity-50";
                 }
-            } else {
-                statusText.innerText = "Écoute bien...";
-                statusText.classList.remove('text-green-500');
+            } else if (data.state === 'playing' && !data.buzzedBy) {
+                // Si l'admin reset le buzz sans changer de musique
+                canBuzz = true;
                 buzzerBtn.disabled = false;
+                statusText.innerText = "RE-BUZZ POSSIBLE !";
+                statusText.className = "text-xl font-black text-gray-800 dark:text-white uppercase italic tracking-tighter text-center";
             }
         });
 
-        // 3. ACTION DU BUZZER (Sécurisée par Transaction)
+        // 2. INFOS JOUEUR (Score, Couleur)
+        onValue(ref(db, `rooms/${roomId}/players/${playerId}`), (snapshot) => {
+            if (snapshot.exists()) {
+                const d = snapshot.val();
+                document.getElementById('player-name').innerText = d.pseudo;
+                document.getElementById('player-score').innerText = `${d.score || 0} PTS`;
+                document.getElementById('player-color').style.backgroundColor = d.color;
+            }
+        });
+
+        // 3. ACTION DU BUZZER
         buzzerBtn.onclick = () => {
+            if (!canBuzz) return;
+
             const buzzedRef = ref(db, `rooms/${roomId}/buzzedBy`);
-            
-            // On utilise une transaction pour être sûr que seul le PREMIER gagne
             runTransaction(buzzedRef, (currentData) => {
                 if (currentData === null) {
-                    return playerId; // On prend la place si elle est vide
+                    return playerId; // On prend la main
                 }
-                return; // Sinon on ne change rien
+                return; // Quelqu'un a déjà buzzé
             });
         };
     </script>
