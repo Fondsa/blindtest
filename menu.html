@@ -91,12 +91,10 @@
         <button id="close-drawer" class="self-end text-xl mb-6 dark:text-white">✕</button>
         
         <div class="space-y-4">
-            <!-- Thème -->
             <button id="toggle-dark" class="w-full p-4 bg-gray-100 dark:bg-zinc-900 rounded-2xl font-bold flex justify-between items-center dark:text-white text-sm">
                 <span>Mode Nuit</span> <span id="dark-icon">🌙</span>
             </button>
             
-            <!-- Administration (Masqué par défaut) -->
             <button id="admin-link" class="hidden w-full p-4 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl font-bold flex items-center justify-center gap-2 border-2 border-amber-200 dark:border-amber-800 text-sm">
                 ADMINISTRATION 🛠️
             </button>
@@ -143,15 +141,12 @@
 
         const adminLink = document.getElementById('admin-link');
 
-        // Gestion de l'authentification et des droits Admin
+        // Authentification et droits Admin
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = 'index.html';
             } else {
-                // On garde l'ID joueur en local pour player.html
                 localStorage.setItem('playerId', user.uid);
-                
-                // Vérification si l'utilisateur est admin dans la DB
                 const userRef = ref(db, `users/${user.uid}`);
                 const snapshot = await get(userRef);
                 
@@ -177,36 +172,47 @@
             window.location.href = `host.html?room=${code}`;
         };
 
-       // Remplace ton ancienne fonction "btn-go" par celle-ci
-document.getElementById('btn-go').onclick = async (e) => {
-    e.preventDefault();
-    const code = document.getElementById('room-code').value.toUpperCase().trim();
-    
-    if(code.length === 5) {
-        if(auth.currentUser) {
-            const uid = auth.currentUser.uid;
+        // --- CODE CORRIGÉ POUR REJOINDRE ---
+        document.getElementById('btn-go').onclick = async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('room-code').value.toUpperCase().trim();
             
-            // 1. Récupérer le pseudo de l'utilisateur (on suppose qu'il est dans users/uid)
-            const userSnap = await get(ref(db, `users/${uid}`));
-            const pseudo = userSnap.exists() ? userSnap.val().pseudo : "Joueur";
-            const color = userSnap.exists() ? userSnap.val().color : "#ff9aa2";
+            if(code.length === 5) {
+                if(auth.currentUser) {
+                    const uid = auth.currentUser.uid;
+                    
+                    // Vérifier si la room existe d'abord
+                    const roomSnap = await get(ref(db, `rooms/${code}`));
+                    
+                    if (roomSnap.exists()) {
+                        // 1. Récupérer le pseudo et la couleur depuis le nœud users
+                        const userSnap = await get(ref(db, `users/${uid}`));
+                        const userData = userSnap.val();
+                        
+                        const pseudo = (userData && userData.pseudo) ? userData.pseudo : "Joueur";
+                        const color = (userData && userData.color) ? userData.color : "#a0c4ff";
 
-            // 2. L'INSCRIRE dans la room sur Firebase
-            // C'est cette étape qui fera bouger la liste chez le Host !
-            await set(ref(db, `rooms/${code}/players/${uid}`), {
-                pseudo: pseudo,
-                color: color,
-                ready: true // Optionnel
-            });
+                        // 2. Inscrire le joueur dans le nœud players de la room
+                        // C'est ce qui déclenchera l'affichage chez le Host
+                        await set(ref(db, `rooms/${code}/players/${uid}`), {
+                            pseudo: pseudo,
+                            color: color,
+                            isReady: true,
+                            joinedAt: Date.now()
+                        });
 
-            // 3. Une fois inscrit, on change de page
-            localStorage.setItem('playerId', uid);
-            window.location.href = `player.html?room=${code}`;
-        }
-    } else {
-        alert("Entre un code à 5 lettres !");
-    }
-};
+                        // 3. Rediriger
+                        localStorage.setItem('playerId', uid);
+                        window.location.href = `player.html?room=${code}`;
+                    } else {
+                        alert("Cette room n'existe pas !");
+                    }
+                }
+            } else {
+                alert("Entre un code à 5 lettres !");
+            }
+        };
+
         // Gestion du Drawer
         const drw = document.getElementById('drawer');
         document.getElementById('open-drawer').onclick = () => drw.classList.add('open');
