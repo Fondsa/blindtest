@@ -20,6 +20,7 @@
         .dark body { background-color: #000000; }
         .dark #bg-container { display: none; }
 
+        /* ☁️ NUAGES PASTEL */
         #bg-container {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1;
             overflow: hidden;
@@ -40,6 +41,7 @@
             100% { transform: translate(8%, 8%) scale(1.05); }
         }
 
+        /* 🎮 BOUTONS PHYSIQUES */
         .btn-game {
             border-radius: 28px;
             color: white;
@@ -82,6 +84,7 @@
         <button id="open-drawer" class="w-12 h-12 bento-card flex items-center justify-center text-xl dark:text-white">☰</button>
     </div>
 
+    <!-- Drawer -->
     <div id="drawer" class="fixed top-0 right-0 h-full w-64 bg-white/95 dark:bg-black/95 z-50 p-6 flex flex-col shadow-2xl">
         <button id="close-drawer" class="self-end text-xl mb-6 dark:text-white">✕</button>
         <div class="space-y-4">
@@ -124,7 +127,7 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, set, get, onDisconnect, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, set, get, onDisconnect, serverTimestamp, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         onAuthStateChanged(auth, async (user) => {
@@ -135,40 +138,37 @@
                 const userRef = ref(db, `users/${user.uid}`);
                 const snapshot = await get(userRef);
                 if (snapshot.exists() && snapshot.val().isAdmin === true) {
-                    const adminLink = document.getElementById('admin-link');
-                    adminLink.classList.remove('hidden');
-                    adminLink.onclick = () => window.location.href = 'Admin.html';
+                    const adminBtn = document.getElementById('admin-link');
+                    adminBtn.classList.remove('hidden');
+                    adminBtn.onclick = () => window.location.href = 'Admin.html';
                 }
             }
         });
 
-        // --- CRÉATION DE ROOM AVEC DÉLAI DE SUPPRESSION ---
+        // --- CRÉATION DE ROOM ---
         document.getElementById('btn-create').onclick = async () => {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             let code = '';
             for (let i = 0; i < 5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
             
             const roomRef = ref(db, `rooms/${code}`);
-            const uid = auth.currentUser.uid;
-
-            // Au départ, on s'assure qu'il n'y a pas de timestamp d'expiration
-            await set(roomRef, { 
-                state: 'waiting', 
-                host: uid, 
-                createdAt: serverTimestamp(),
-                expiresAt: null 
+            
+            // On prépare le compte à rebours de sécurité (heure serveur)[cite: 2]
+            onDisconnect(roomRef).update({
+                expiresAt: serverTimestamp() 
             });
 
-            // LOGIQUE DE NETTOYAGE : Si le Host se déconnecte, on marque la room comme expirant dans 60s
-            // Note: On utilise serverTimestamp() pour la précision.
-            onDisconnect(roomRef).update({
-                expiresAt: Date.now() + 60000 // Expire dans 60 secondes
+            await set(roomRef, { 
+                state: 'waiting', 
+                host: auth.currentUser.uid, 
+                createdAt: serverTimestamp(),
+                expiresAt: null // Actif par défaut
             });
 
             window.location.href = `host.html?room=${code}`;
         };
 
-        // --- REJOINDRE AVEC NETTOYAGE JOUEUR ---
+        // --- REJOINDRE UNE ROOM ---
         document.getElementById('btn-go').onclick = async (e) => {
             e.preventDefault();
             const code = document.getElementById('room-code').value.toUpperCase().trim();
@@ -182,25 +182,24 @@
                     
                     const playerRef = ref(db, `rooms/${code}/players/${uid}`);
                     
+                    // Inscription du joueur[cite: 2]
                     await set(playerRef, {
-                        pseudo: userData?.pseudo || "Joueur",
+                        pseudo: userData?.pseudo || "Anonyme",
                         color: userData?.color || "#a0c4ff",
                         isReady: true
                     });
 
-                    // Si le joueur quitte, on le supprime de la liste après 1 min
-                    // Mais pour les joueurs, on peut souvent se permettre le .remove() immédiat
-                    // Si tu veux 1 min aussi pour les joueurs :
-                    onDisconnect(playerRef).remove(); 
+                    // Suppression automatique du joueur s'il quitte la page[cite: 2]
+                    onDisconnect(playerRef).remove();
 
                     window.location.href = `player.html?room=${code}`;
                 } else {
-                    alert("Room introuvable !");
+                    alert("Room inexistante !");
                 }
             }
         };
 
-        // Gestion UI Drawer & Dark Mode
+        // UI et Déconnexion
         document.getElementById('open-drawer').onclick = () => document.getElementById('drawer').classList.add('open');
         document.getElementById('close-drawer').onclick = () => document.getElementById('drawer').classList.remove('open');
         document.getElementById('toggle-dark').onclick = () => {
@@ -208,7 +207,7 @@
             localStorage.setItem('dark', document.documentElement.classList.contains('dark'));
         };
         if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
-        
+
         document.getElementById('btn-logout').onclick = () => {
             signOut(auth).then(() => {
                 localStorage.clear();
