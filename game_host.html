@@ -36,8 +36,11 @@
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
 
-        .loading-pulse { animation: pulse 1.5s infinite; opacity: 0.5; }
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 0.7; } 100% { opacity: 0.4; } }
+        /* MODAL STYLE */
+        #modal-overlay { transition: opacity 0.3s ease; }
+        .modal-content { transform: scale(0.9); transition: transform 0.3s ease; }
+        #modal-overlay.active { display: flex !important; opacity: 1; }
+        #modal-overlay.active .modal-content { transform: scale(1); }
     </style>
 </head>
 <body>
@@ -45,6 +48,17 @@
     <div id="bg-container" class="dark:hidden">
         <div class="cloud cloud-pink"></div>
         <div class="cloud cloud-blue"></div>
+    </div>
+
+    <!-- POP-UP HISTORIQUE BUZZ (Caché par défaut) -->
+    <div id="modal-overlay" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-6 opacity-0">
+        <div class="modal-content bento-card bg-white/90 dark:bg-zinc-900/90 w-full max-w-sm p-6 shadow-2xl border-4 border-rose-300">
+            <h3 class="text-xl font-black text-gray-800 dark:text-white mb-4 uppercase italic">Chronologie des Buzz</h3>
+            <div id="buzz-history-list" class="space-y-2 max-h-60 overflow-y-auto custom-scroll pr-2 text-sm">
+                <!-- Les noms s'afficheront ici -->
+            </div>
+            <button id="close-modal" class="mt-6 w-full py-3 bg-rose-400 text-white font-black rounded-2xl border-bottom-[4px] border-rose-600 active:translate-y-1 active:border-b-0 transition-all">FERMER</button>
+        </div>
     </div>
 
     <main class="relative z-10 flex flex-col h-full w-full p-4 space-y-3">
@@ -56,32 +70,36 @@
         </div>
 
         <!-- ECRAN DE RÉVÉLATION -->
-        <div class="bento-card p-4 text-center flex flex-col items-center justify-center min-h-[120px]">
-            <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic px-2">Prêt à jouer ?</h2>
+        <div class="bento-card p-4 text-center flex flex-col items-center justify-center min-h-[140px] relative">
+            <h2 id="display-title" class="text-lg font-black text-gray-800 dark:text-white uppercase italic px-2">Prêt à jouer ?</h2>
+            
             <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
                 <p id="artist-name" class="text-rose-500 font-bold text-md uppercase italic"></p>
             </div>
-            <div id="buzzer-alert" class="hidden mt-2 font-bold text-rose-600 animate-bounce">🚨 BUZZ !</div>
+
+            <!-- ZONE BUZZ -->
+            <div id="buzzer-area" class="hidden mt-3 flex items-center gap-2">
+                <div class="bg-rose-100 dark:bg-rose-900/30 px-4 py-2 rounded-full border-2 border-rose-400 animate-pulse">
+                    <span class="text-rose-600 font-black text-sm uppercase">🚨 BUZZ : <span id="fastest-player">---</span></span>
+                </div>
+                <button id="btn-history" class="w-10 h-10 bg-white/80 dark:bg-white/10 rounded-full flex items-center justify-center shadow-sm border border-rose-200">
+                    📜
+                </button>
+            </div>
         </div>
 
         <!-- DOUBLE PLAYLIST -->
-<div class="flex-1 flex flex-col min-h-0 space-y-3">
-    <div class="bento-card p-3 flex flex-col min-h-[45%]">
-        <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📦 Musiques de Base</h3>
-        <div id="list-base" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
-            <!-- Message de chargement initial -->
-            <p class="text-[10px] text-rose-400 animate-pulse italic text-center mt-2">Chargement des sons...</p>
-        </div>
-    </div>
+        <div class="flex-1 flex flex-col min-h-0 space-y-3">
+            <div class="bento-card p-3 flex flex-col min-h-[45%]">
+                <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📦 Musiques de Base</h3>
+                <div id="list-base" class="flex-1 overflow-y-auto space-y-2 custom-scroll text-center italic text-[10px] text-rose-400">Chargement des sons...</div>
+            </div>
 
-    <div class="bento-card p-3 flex flex-col min-h-[45%]">
-        <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📂 Mes Imports</h3>
-        <div id="list-imported" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
-            <!-- Message de chargement initial -->
-            <p class="text-[10px] text-rose-400 animate-pulse italic text-center mt-2">Chargement des sons...</p>
+            <div class="bento-card p-3 flex flex-col min-h-[45%]">
+                <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📂 Mes Imports</h3>
+                <div id="list-imported" class="flex-1 overflow-y-auto space-y-2 custom-scroll text-center italic text-[10px] text-rose-400">Chargement des sons...</div>
+            </div>
         </div>
-    </div>
-</div>
 
         <!-- RÉGIE AUDIO -->
         <div class="grid grid-cols-4 gap-2 h-16">
@@ -106,20 +124,17 @@
         const roomId = urlParams.get('room');
         const audio = document.getElementById('audio-player');
         const displayTitle = document.getElementById('display-title');
-        const buzzerAlert = document.getElementById('buzzer-alert');
+        const buzzerArea = document.getElementById('buzzer-area');
+        const fastestPlayerSpan = document.getElementById('fastest-player');
+        const historyList = document.getElementById('buzz-history-list');
+        const modal = document.getElementById('modal-overlay');
         
         document.getElementById('room-id').innerText = roomId;
 
         onAuthStateChanged(auth, (user) => {
             if (!user) return;
-
-            onValue(ref(db, 'musics/base'), (snapshot) => {
-                renderList(snapshot, 'list-base', 'musics/base');
-            });
-
-            onValue(ref(db, `musics/users/${user.uid}`), (snapshot) => {
-                renderList(snapshot, 'list-imported', `musics/users/${user.uid}`);
-            });
+            onValue(ref(db, 'musics/base'), snap => renderList(snap, 'list-base', 'musics/base'));
+            onValue(ref(db, `musics/users/${user.uid}`), snap => renderList(snap, 'list-imported', `musics/users/${user.uid}`));
         });
 
         function renderList(snapshot, elementId, dbPath) {
@@ -129,74 +144,80 @@
                 Object.entries(snapshot.val()).forEach(([id, track]) => {
                     const item = document.createElement('div');
                     item.className = "p-2 bg-white/40 dark:bg-white/5 rounded-xl cursor-pointer hover:bg-white/80 transition-all text-sm font-bold dark:text-white border-l-4 border-transparent hover:border-rose-300";
-                    
-                    // Formatage du nom complet pour l'affichage dans la liste
                     const fullName = track.artist ? `${track.title} - ${track.artist}` : track.title;
                     item.innerText = fullName;
                     
                     item.onclick = async () => {
                         try {
-                            // Effet de chargement
                             displayTitle.innerText = "Chargement...";
-                            displayTitle.classList.add('loading-pulse');
-                            
                             const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
-                            
                             if (trackSnap.exists()) {
-                                const audioUrl = trackSnap.val();
-                                audio.src = audioUrl;
-                                
-                                // --- MISE À JOUR : Morceau chargé : Titre - Artiste ---
+                                audio.src = trackSnap.val();
                                 displayTitle.innerText = `Morceau chargé : ${fullName}`;
-                                displayTitle.classList.remove('loading-pulse');
-                                
-                                // Préparation de la zone de révélation
                                 document.getElementById('artist-name').innerText = fullName;
                                 document.getElementById('reveal-zone').classList.add('hidden');
-                                buzzerAlert.classList.add('hidden');
-
-                                // Synchronisation Firebase
+                                buzzerArea.classList.add('hidden');
+                                // Reset buzzer list en DB lors d'un nouveau morceau
                                 update(ref(db, `rooms/${roomId}`), { 
                                     state: 'playing', 
                                     currentTrack: fullName,
-                                    currentAudio: audioUrl,
-                                    startTime: Date.now(),
-                                    buzzedBy: null 
+                                    buzzedBy: null,
+                                    buzzHistory: null 
                                 });
-                                
                                 audio.play(); 
                             }
-                        } catch (e) {
-                            displayTitle.innerText = "Erreur de chargement !";
-                            console.error(e);
-                        }
+                        } catch (e) { console.error(e); }
                     };
                     container.appendChild(item);
                 });
             } else {
-                container.innerHTML = `<p class="text-[10px] text-gray-400 italic text-center mt-2">Aucun titre trouvé</p>`;
+                container.innerHTML = `<p class="text-[10px] text-gray-400 italic text-center mt-2">Aucun titre</p>`;
             }
         }
 
-        // Surveillance du buzzer
-        onValue(ref(db, `rooms/${roomId}/buzzedBy`), (snapshot) => {
+        // SURVEILLANCE DES BUZZS
+        onValue(ref(db, `rooms/${roomId}/buzzHistory`), async (snapshot) => {
             if (snapshot.exists()) {
                 audio.pause();
-                buzzerAlert.classList.remove('hidden');
-                displayTitle.innerText = "🚨 BUZZ DÉTECTÉ !";
+                const historyData = snapshot.val(); // C'est un objet d'UIDs avec timestamps
+                
+                // Convertir en tableau et trier par le temps
+                const sortedBuzz = Object.entries(historyData)
+                    .sort((a, b) => a[1] - b[1]);
+
+                // Nettoyer la liste du pop-up
+                historyList.innerHTML = "";
+                
+                for (let i = 0; i < sortedBuzz.length; i++) {
+                    const uid = sortedBuzz[i][0];
+                    const userSnap = await get(ref(db, `users/${uid}`));
+                    const pseudo = userSnap.exists() ? userSnap.val().pseudo : "Inconnu";
+
+                    // Le premier est le plus rapide
+                    if (i === 0) {
+                        fastestPlayerSpan.innerText = pseudo;
+                        displayTitle.innerText = "🚨 BUZZ DÉTECTÉ !";
+                        buzzerArea.classList.remove('hidden');
+                    }
+
+                    // Ajouter à la liste modale
+                    const line = document.createElement('div');
+                    line.className = `flex justify-between p-3 rounded-xl ${i === 0 ? 'bg-rose-100 dark:bg-rose-500/20 border-2 border-rose-400 font-bold' : 'bg-gray-50 dark:bg-white/5'}`;
+                    line.innerHTML = `<span>${i + 1}. ${pseudo}</span> <span class="text-[10px] opacity-50">+${(sortedBuzz[i][1] - sortedBuzz[0][1])/1000}s</span>`;
+                    historyList.appendChild(line);
+                }
             }
         });
 
-        // Contrôles de la régie
+        // GESTION MODALE
+        document.getElementById('btn-history').onclick = () => modal.classList.add('active');
+        document.getElementById('close-modal').onclick = () => modal.classList.remove('active');
+
+        // RÉGIE
         document.getElementById('ctrl-play').onclick = () => audio.play();
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
-        document.getElementById('ctrl-stop').onclick = () => { 
-            audio.pause(); 
-            audio.currentTime = 0; 
-        };
-        document.getElementById('ctrl-reveal').onclick = () => {
-            document.getElementById('reveal-zone').classList.toggle('hidden');
-        };
+        document.getElementById('ctrl-stop').onclick = () => { audio.pause(); audio.currentTime = 0; };
+        document.getElementById('ctrl-reveal').onclick = () => document.getElementById('reveal-zone').classList.toggle('hidden');
 
     </script>
 </body>
