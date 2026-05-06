@@ -198,9 +198,6 @@
                             joinedAt: serverTimestamp()
                         });
 
-                        // Sécurité : suppression si le joueur quitte la page
-                        onDisconnect(playerRef).remove();
-
                         window.location.href = `player.html?room=${code}`;
                     } else {
                         alert("Room inexistante !");
