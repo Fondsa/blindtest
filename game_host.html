@@ -59,9 +59,9 @@
         <div class="bento-card p-4 text-center flex flex-col items-center justify-center min-h-[120px]">
             <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic">Prêt à jouer ?</h2>
             <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
-                <p id="artist-name" class="text-rose-500 font-bold text-md uppercase"></p>
+                <!-- ID artist-name conservé mais utilisé pour afficher le bloc "Titre - Artiste" -->
+                <p id="artist-name" class="text-rose-500 font-bold text-md uppercase italic"></p>
             </div>
-            <!-- Indicateur de qui a buzzé -->
             <div id="buzzer-alert" class="hidden mt-2 font-bold text-rose-600 animate-bounce">🚨 BUZZ !</div>
         </div>
 
@@ -124,34 +124,36 @@
                 Object.entries(snapshot.val()).forEach(([id, track]) => {
                     const item = document.createElement('div');
                     item.className = "p-2 bg-white/40 dark:bg-white/5 rounded-xl cursor-pointer hover:bg-white/80 transition-all text-sm font-bold dark:text-white border-l-4 border-transparent hover:border-rose-300";
-                    item.innerText = track.title;
+                    
+                    // --- MODIFICATION ICI : Affichage Nom - Artiste ---
+                    const fullName = track.artist ? `${track.title} - ${track.artist}` : track.title;
+                    item.innerText = fullName;
                     
                     item.onclick = async () => {
                         try {
                             displayTitle.innerText = "Chargement...";
                             displayTitle.classList.add('loading-pulse');
                             
-                            // Récupération ponctuelle du son
                             const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
                             
                             if (trackSnap.exists()) {
                                 const audioUrl = trackSnap.val();
                                 audio.src = audioUrl;
                                 
-                                // Reset de l'interface
                                 displayTitle.innerText = "Morceau chargé !";
                                 displayTitle.classList.remove('loading-pulse');
-                                document.getElementById('artist-name').innerText = track.title + (track.artist ? " - " + track.artist : "");
+                                
+                                // Mise à jour de la zone de révélation au format Titre - Artiste
+                                document.getElementById('artist-name').innerText = fullName;
                                 document.getElementById('reveal-zone').classList.add('hidden');
                                 buzzerAlert.classList.add('hidden');
 
-                                // Synchronisation avec les joueurs
                                 update(ref(db, `rooms/${roomId}`), { 
                                     state: 'playing', 
-                                    currentTrack: track.title,
+                                    currentTrack: fullName, // On envoie le nom complet à la DB
                                     currentAudio: audioUrl,
                                     startTime: Date.now(),
-                                    buzzedBy: null // Très important : on libère le buzzer
+                                    buzzedBy: null 
                                 });
                                 
                                 audio.play(); 
@@ -168,17 +170,14 @@
             }
         }
 
-        // Surveiller si quelqu'un buzze pour stopper le son localement aussi
         onValue(ref(db, `rooms/${roomId}/buzzedBy`), (snapshot) => {
             if (snapshot.exists()) {
                 audio.pause();
                 buzzerAlert.classList.remove('hidden');
-                // On pourrait ici chercher le pseudo du joueur via l'ID pour l'afficher
                 displayTitle.innerText = "BUZZ DÉTECTÉ !";
             }
         });
 
-        // COMMANDES RÉGIE
         document.getElementById('ctrl-play').onclick = () => audio.play();
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
         document.getElementById('ctrl-stop').onclick = () => { audio.pause(); audio.currentTime = 0; };
