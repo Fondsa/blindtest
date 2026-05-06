@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Upload Admin - Blindtest</title>
+    <title>Admin - Gestion Globale</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <script>tailwind.config = { darkMode: 'class' }</script>
@@ -21,24 +21,12 @@
         .cloud-blue { background: #dcf2ff; width: 70vw; height: 70vw; bottom: -15%; right: -5%; }
         @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
 
-        .btn-game {
-            border-radius: 20px;
-            color: white;
-            font-weight: 700;
-            border-bottom: 5px solid rgba(0,0,0,0.15);
-            transition: all 0.1s ease;
-            text-transform: uppercase;
-        }
+        .btn-game { border-radius: 20px; color: white; font-weight: 700; border-bottom: 5px solid rgba(0,0,0,0.15); transition: all 0.1s ease; text-transform: uppercase; }
         .btn-game:active { transform: translateY(3px); border-bottom-width: 2px; }
-        .btn-primary { background-color: #6366f1; }
+        .btn-admin { background-color: #6366f1; }
         .btn-disabled { background-color: #d1d5db; border-bottom: none; transform: none; cursor: not-allowed; }
 
-        .bento-card {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            border-radius: 24px;
-        }
+        .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
 
         input::file-selector-button {
@@ -51,6 +39,14 @@
             margin-right: 10px;
             cursor: pointer;
         }
+
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        
+        .btn-action { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .btn-action:active { transform: scale(0.9); }
+        .btn-play { background-color: #ff9aa2; color: white; } /* Rose comme demandé */
+        .btn-delete { background-color: #ef4444; color: white; } /* Rouge comme demandé */
     </style>
 </head>
 <body>
@@ -60,56 +56,62 @@
         <div class="cloud cloud-blue"></div>
     </div>
 
-    <main class="relative z-10 flex flex-col h-full w-full p-6 items-center justify-center">
+    <main class="relative z-10 flex h-full w-full p-4 md:p-8 gap-6 flex-col md:flex-row">
         
-        <div class="w-full max-w-md space-y-6">
-            <div class="flex items-center gap-4 mb-2">
-                <button onclick="history.back()" class="bento-card w-12 h-12 flex items-center justify-center text-lg">⬅️</button>
-                <div>
-                    <h1 class="text-2xl font-black text-gray-800 dark:text-white italic uppercase tracking-tighter">Admin <span class="text-indigo-500">Upload</span></h1>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ajout à la liste commune</p>
-                </div>
+        <!-- BIBLIOTHÈQUE GLOBALE (GAUCHE) -->
+        <div class="flex-1 flex flex-col min-h-0">
+            <div class="flex items-center justify-between mb-4 px-2">
+                <h2 class="text-2xl font-black text-gray-800 dark:text-white italic uppercase tracking-tighter">Base <span class="text-indigo-500">Globale</span></h2>
+                <span id="music-count" class="bg-indigo-100 text-indigo-500 text-[10px] font-bold px-3 py-1 rounded-full uppercase">0 sons</span>
             </div>
 
-            <div class="bento-card p-6 space-y-4">
-                <!-- Titre -->
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Titre de la musique</label>
-                    <input type="text" id="track-title" placeholder="Ex: Master of Puppets" 
-                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-indigo-300 outline-none">
-                </div>
-
-                <!-- Artiste -->
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Artiste</label>
-                    <input type="text" id="track-artist" placeholder="Ex: Metallica" 
-                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-indigo-300 outline-none">
-                </div>
-
-                <!-- Fichier -->
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Fichier MP3 (Max 30s / 2.5Mo)</label>
-                    <input type="file" id="track-file" accept="audio/*" 
-                        class="w-full text-sm text-gray-500 dark:text-gray-300">
-                </div>
-
-                <!-- Status -->
-                <div id="upload-status" class="hidden text-center text-[10px] font-black py-3 rounded-xl transition-all uppercase tracking-widest"></div>
-
-                <!-- Bouton -->
-                <button id="btn-upload" class="btn-game btn-primary w-full py-4 mt-2 italic">Enregistrer dans la base globale</button>
+            <div id="library-container" class="bento-card flex-1 overflow-y-auto custom-scroll p-4 space-y-3">
+                <div class="h-full flex items-center justify-center text-gray-400 text-sm font-medium italic">Chargement de la base...</div>
             </div>
         </div>
 
+        <!-- FORMULAIRE ADMIN (DROITE) -->
+        <div class="w-full md:w-[400px] flex flex-col justify-center">
+            <div class="bento-card p-6 space-y-4">
+                <div class="text-center mb-2">
+                    <h1 class="text-2xl font-black text-gray-800 dark:text-white italic tracking-tighter uppercase">Admin <span class="text-indigo-500">Upload</span></h1>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Ajouter à la liste commune</p>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Titre</label>
+                    <input type="text" id="track-title" placeholder="Ex: Master of Puppets" class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-indigo-300 outline-none font-bold">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Artiste</label>
+                    <input type="text" id="track-artist" placeholder="Ex: Metallica" class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-indigo-300 outline-none font-bold">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Fichier MP3 (Max 2.5 Mo)</label>
+                    <input type="file" id="track-file" accept="audio/*" class="w-full text-sm text-gray-500 dark:text-gray-300">
+                </div>
+
+                <div id="upload-status" class="hidden text-center text-[10px] font-black py-3 rounded-xl transition-all uppercase tracking-widest"></div>
+
+                <button id="btn-upload" class="btn-game btn-admin w-full py-4 mt-2">Enregistrer en base globale</button>
+                <button onclick="window.location.href='Admin.html'" class="w-full text-gray-400 font-bold text-[11px] uppercase tracking-widest hover:text-indigo-500 transition-colors mt-2">Retour Dashboard Admin</button>
+            </div>
+        </div>
     </main>
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, push, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const btnUpload = document.getElementById('btn-upload');
         const status = document.getElementById('upload-status');
+        const libraryContainer = document.getElementById('library-container');
+        const musicCountLabel = document.getElementById('music-count');
+        
+        let currentAudio = null;
 
         // Sécurité Admin
         onAuthStateChanged(auth, async (user) => {
@@ -117,8 +119,79 @@
             const snap = await get(ref(db, `users/${user.uid}`));
             if (!snap.exists() || !snap.val().isAdmin) {
                 window.location.href = 'menu.html';
+            } else {
+                loadGlobalLibrary();
             }
         });
+
+        // --- CHARGEMENT BIBLIOTHÈQUE GLOBALE ---
+        function loadGlobalLibrary() {
+            onValue(ref(db, 'musics/base'), (snapshot) => {
+                libraryContainer.innerHTML = "";
+                const data = snapshot.val();
+                if (!data) {
+                    libraryContainer.innerHTML = `<div class="h-full flex items-center justify-center text-gray-400 text-sm font-medium italic">La base est vide.</div>`;
+                    musicCountLabel.innerText = "0 sons";
+                    return;
+                }
+
+                const entries = Object.entries(data).reverse();
+                musicCountLabel.innerText = `${entries.length} sons`;
+
+                entries.forEach(([key, music]) => {
+                    const card = document.createElement('div');
+                    card.className = "flex items-center justify-between p-3 bg-white/40 dark:bg-white/5 rounded-2xl border border-white/50 dark:border-white/10";
+                    card.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-xl shrink-0">🎵</div>
+                            <div class="truncate">
+                                <h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${music.title}</h4>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase truncate">${music.artist || 'Inconnu'}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0 ml-2">
+                            <button id="play-${key}" onclick="previewMusic('${key}')" class="btn-action btn-play">▶️</button>
+                            <button onclick="deleteMusic('${key}')" class="btn-action btn-delete">🗑️</button>
+                        </div>
+                    `;
+                    libraryContainer.appendChild(card);
+                });
+            });
+        }
+
+        // --- PREVIEW ---
+        window.previewMusic = async (key) => {
+            const playBtn = document.getElementById(`play-${key}`);
+            if (currentAudio && !currentAudio.paused && playBtn.innerText === "⏹️") {
+                currentAudio.pause();
+                playBtn.innerText = "▶️";
+                return;
+            }
+            if (currentAudio) {
+                currentAudio.pause();
+                document.querySelectorAll('[id^="play-"]').forEach(btn => btn.innerText = "▶️");
+            }
+            playBtn.innerText = "⏳";
+            try {
+                const snap = await get(ref(db, `musics/base/${key}/url`));
+                if (snap.exists()) {
+                    currentAudio = new Audio(snap.val());
+                    currentAudio.play();
+                    playBtn.innerText = "⏹️";
+                    currentAudio.onended = () => { playBtn.innerText = "▶️"; };
+                }
+            } catch (e) {
+                playBtn.innerText = "▶️";
+            }
+        };
+
+        // --- SUPPRESSION ---
+        window.deleteMusic = (key) => {
+            if(confirm("Supprimer définitivement ce son de la BASE GLOBALE ?")) {
+                if(currentAudio) currentAudio.pause();
+                remove(ref(db, `musics/base/${key}`));
+            }
+        };
 
         const toBase64 = file => new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -127,55 +200,35 @@
             reader.onerror = error => reject(error);
         });
 
+        // --- UPLOAD ---
         btnUpload.onclick = async () => {
             const file = document.getElementById('track-file').files[0];
             const title = document.getElementById('track-title').value.trim();
             const artist = document.getElementById('track-artist').value.trim();
 
-            if (!file || !title) {
-                showStatus("Titre et fichier requis !", "bg-red-100 text-red-600 border border-red-200");
-                return;
-            }
+            if (!file || !title) return showStatus("Données manquantes !", "bg-red-100 text-red-600");
 
-            // Vérification taille (Base64 augmente la taille de 33%, donc 2.5Mo max fichier source)
-            if (file.size > 2.5 * 1024 * 1024) {
-                showStatus("Fichier trop lourd (Max 2.5 Mo)", "bg-red-100 text-red-600 border border-red-200");
-                return;
-            }
+            btnUpload.disabled = true;
+            btnUpload.classList.add('btn-disabled');
+            showStatus("Conversion...", "bg-indigo-100 text-indigo-600 animate-pulse");
 
             try {
-                btnUpload.disabled = true;
-                btnUpload.classList.add('btn-disabled');
-                btnUpload.innerText = "Traitement...";
-                showStatus("Conversion en cours...", "bg-indigo-100 text-indigo-600 animate-pulse");
-
                 const base64Data = await toBase64(file);
-
-                showStatus("Upload vers la base globale...", "bg-amber-100 text-amber-700");
-
-                // Envoi vers musics/base (la liste commune)
                 await push(ref(db, 'musics/base'), {
                     title: title,
                     artist: artist || "Artiste Inconnu",
                     url: base64Data,
-                    createdAt: Date.now(),
-                    isAdminFile: true
+                    createdAt: Date.now()
                 });
-
-                showStatus("✅ Musique ajoutée avec succès !", "bg-green-100 text-green-700 border border-green-200");
-                
-                // Reset
+                showStatus("✅ Ajouté à la base globale !", "bg-green-100 text-green-700");
                 document.getElementById('track-title').value = "";
                 document.getElementById('track-artist').value = "";
                 document.getElementById('track-file').value = "";
-
-            } catch (error) {
-                console.error(error);
-                showStatus("Erreur : " + error.message, "bg-red-100 text-red-600");
+            } catch (e) {
+                showStatus("Erreur d'envoi", "bg-red-100 text-red-600");
             } finally {
                 btnUpload.disabled = false;
                 btnUpload.classList.remove('btn-disabled');
-                btnUpload.innerText = "Enregistrer dans la base globale";
             }
         };
 
