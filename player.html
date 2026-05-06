@@ -110,7 +110,7 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, onDisconnect, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         // THÈME SOMBRE
         if (localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
@@ -118,12 +118,16 @@
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
         const playerId = localStorage.getItem('playerId');
+        const playerRef = ref(db, `rooms/${roomId}/players/${auth.currentUser.uid}`);
 
         const buzzerBtn = document.getElementById('buzzer');
         const statusText = document.getElementById('status-text');
         const audioPlayer = new Audio();
         
         let canBuzz = false;
+
+        // C'est ici qu'on met la sécurité !
+        onDisconnect(playerRef).remove();
 
         if (!roomId || !playerId) {
             window.location.href = 'menu.html';
