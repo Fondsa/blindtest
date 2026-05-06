@@ -15,47 +15,35 @@
             transition: background-color 0.3s ease;
         }
         .dark body { background-color: #000000; }
-        .dark #bg-container { display: none; }
-
-        #bg-container {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1;
-            overflow: hidden;
-        }
-        .cloud {
-            position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6;
-            animation: floatClouds 15s infinite alternate ease-in-out;
-        }
+        #bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; overflow: hidden; }
+        .cloud { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6; animation: floatClouds 15s infinite alternate ease-in-out; }
         .cloud-pink { background: #ffdce0; width: 60vw; height: 60vw; top: -10%; left: -5%; }
         .cloud-blue { background: #dcf2ff; width: 70vw; height: 70vw; bottom: -15%; right: -5%; }
-        
         @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
 
-        .bento-card {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            border-radius: 24px;
-        }
+        .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
 
-        /* ZONE DRAG & DROP */
+        /* ZONE DRAG & DROP + CLIC */
         #drop-zone {
             border: 3px dashed #6366f1;
-            transition: all 0.3s;
             cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         #drop-zone.drag-over {
-            background: rgba(99, 102, 241, 0.15);
+            background: rgba(99, 102, 241, 0.2);
             border-color: #4f46e5;
             transform: scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
-        input[type="text"] { background: white; border-radius: 15px; padding: 12px; width: 100%; font-weight: 600; margin-bottom: 10px; border: 2px solid transparent; }
+        input[type="text"] { background: white; border-radius: 15px; padding: 12px; width: 100%; font-weight: 600; border: 2px solid transparent; transition: 0.2s; }
+        input[type="text"]:focus { border-color: #6366f1; outline: none; }
         .dark input[type="text"] { background: rgba(255,255,255,0.1); color: white; }
 
         .btn-upload { background: #6366f1; color: white; font-weight: 800; padding: 16px; border-radius: 20px; width: 100%; transition: 0.2s; border-bottom: 4px solid #4f46e5; }
         .btn-upload:active { transform: translateY(2px); border-bottom-width: 2px; }
-        .btn-upload:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-upload:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
     </style>
 </head>
 <body>
@@ -66,132 +54,150 @@
     </div>
 
     <main class="relative z-10 flex flex-col h-full w-full p-6 items-center justify-center">
-        
         <div class="w-full max-w-md">
+            <!-- HEADER -->
             <div class="flex items-center gap-4 mb-8">
-                <button onclick="history.back()" class="bento-card w-12 h-12 flex items-center justify-center">⬅️</button>
+                <button onclick="history.back()" class="bento-card w-12 h-12 flex items-center justify-center text-lg">⬅️</button>
                 <h1 class="text-2xl font-black text-gray-800 dark:text-white italic uppercase tracking-tighter">Upload <span class="text-indigo-500">Global</span></h1>
             </div>
 
             <div class="bento-card p-6 space-y-4">
-                <!-- Zone de dépôt -->
-                <div id="drop-zone" class="p-8 rounded-3xl flex flex-col items-center justify-center text-center">
-                    <span class="text-4xl mb-2">🎵</span>
-                    <p id="file-name" class="text-xs font-bold text-gray-500 uppercase tracking-widest">Glisse ton MP3 ici ou clique</p>
-                    <input type="file" id="file-input" accept="audio/*" class="hidden">
+                <!-- ZONE HYBRIDE -->
+                <div id="drop-zone" class="p-10 rounded-3xl flex flex-col items-center justify-center text-center">
+                    <div id="icon-container" class="text-5xl mb-3">📁</div>
+                    <p id="file-name" class="text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                        Glisser le MP3 <br> <span class="text-[9px] opacity-60">ou cliquer pour choisir</span>
+                    </p>
+                    <input type="file" id="file-input" accept="audio/mpeg, audio/wav" class="hidden">
                 </div>
 
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 tracking-widest">Titre du morceau</label>
-                    <input type="text" id="title" placeholder="Ex: Bohemian Rhapsody">
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-[9px] font-black text-gray-400 uppercase ml-2 tracking-widest">Nom de la musique</label>
+                        <input type="text" id="title" placeholder="Ex: Master of Puppets">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-gray-400 uppercase ml-2 tracking-widest">Artiste</label>
+                        <input type="text" id="artist" placeholder="Ex: Metallica">
+                    </div>
                 </div>
 
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 tracking-widest">Artiste / Groupe</label>
-                    <input type="text" id="artist" placeholder="Ex: Queen">
-                </div>
-
-                <button id="btn-submit" class="btn-upload mt-4">LANCER L'IMPORTATION</button>
+                <button id="btn-submit" class="btn-upload mt-4 italic uppercase tracking-tighter">
+                    Ajouter à la bibliothèque
+                </button>
                 
-                <!-- Barre de progression -->
-                <div id="progress-container" class="hidden w-full bg-gray-200 dark:bg-zinc-800 rounded-full h-2 mt-4">
-                    <div id="progress-bar" class="bg-indigo-500 h-2 rounded-full" style="width: 0%"></div>
-                </div>
                 <p id="status" class="text-center text-[10px] font-black uppercase mt-2 hidden"></p>
             </div>
+            
+            <p class="text-center text-[9px] text-gray-400 font-bold mt-6 uppercase tracking-widest opacity-50">Format MP3 uniquement - Max 30 secondes</p>
         </div>
-
     </main>
 
     <script type="module">
-        import { db, auth, storage } from './firebase-config.js';
-        import { ref as dbRef, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        import { db, auth } from './firebase-config.js';
+        import { ref, push, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        if (localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
 
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
         const fileName = document.getElementById('file-name');
         const btnSubmit = document.getElementById('btn-submit');
         const statusText = document.getElementById('status');
-        const progressBar = document.getElementById('progress-bar');
-        const progressContainer = document.getElementById('progress-container');
+        const iconContainer = document.getElementById('icon-container');
 
-        let selectedFile = null;
+        let base64String = "";
 
-        // Gestion du Drag & Drop
+        // Sécurité Admin
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            const snap = await get(ref(db, `users/${user.uid}`));
+            if (!snap.exists() || !snap.val().isAdmin) window.location.href = 'menu.html';
+        });
+
+        // Click sur la zone pour ouvrir l'explorateur
         dropZone.onclick = () => fileInput.click();
-        
+
+        // Drag & Drop events
         dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); };
         dropZone.ondragleave = () => dropZone.classList.remove('drag-over');
         dropZone.ondrop = (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
-            handleFile(e.dataTransfer.files[0]);
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
         };
 
-        fileInput.onchange = (e) => handleFile(e.target.files[0]);
+        fileInput.onchange = (e) => { if (e.target.files.length > 0) handleFile(e.target.files[0]); };
 
         function handleFile(file) {
-            if (file && file.type.startsWith('audio/')) {
-                selectedFile = file;
-                fileName.innerText = "Fichier prêt : " + file.name;
-                fileName.classList.add('text-indigo-500');
-            } else {
-                alert("Veuillez choisir un fichier audio (.mp3, .wav...)");
-            }
+            if (!file.type.startsWith('audio/')) return alert("Fichier audio uniquement !");
+            
+            statusText.classList.remove('hidden');
+            statusText.innerText = "Traitement audio...";
+            statusText.className = "text-center text-[10px] font-black uppercase mt-2 text-indigo-500 animate-pulse";
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                audioContext.decodeAudioData(e.target.result, (buffer) => {
+                    if (buffer.duration > 31) {
+                        alert("Fichier trop long ! (Max 30s)");
+                        resetFile();
+                        return;
+                    }
+                    
+                    const blob = new Blob([e.target.result], { type: file.type });
+                    const readerBase64 = new FileReader();
+                    readerBase64.readAsDataURL(blob);
+                    readerBase64.onloadend = () => {
+                        base64String = readerBase64.result;
+                        fileName.innerHTML = `<span class="text-indigo-500">Prêt :</span><br>${file.name}`;
+                        iconContainer.innerText = "✅";
+                        statusText.innerText = "Fichier validé !";
+                        statusText.className = "text-center text-[10px] font-black uppercase mt-2 text-green-500";
+                    };
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function resetFile() {
+            fileInput.value = "";
+            base64String = "";
+            iconContainer.innerText = "📁";
+            fileName.innerHTML = 'Glisser le MP3 <br> <span class="text-[9px] opacity-60">ou cliquer pour choisir</span>';
+            statusText.classList.add('hidden');
         }
 
         btnSubmit.onclick = async () => {
             const title = document.getElementById('title').value.trim();
             const artist = document.getElementById('artist').value.trim();
 
-            if (!selectedFile || !title) {
-                alert("Fichier et Titre requis !");
-                return;
-            }
+            if (!base64String || !title) return alert("Musique et Titre manquants !");
 
             btnSubmit.disabled = true;
-            progressContainer.classList.remove('hidden');
-            statusText.classList.remove('hidden');
-            statusText.innerText = "Chargement...";
+            statusText.innerText = "🚀 Envoi en cours...";
 
-            // 1. Upload vers Firebase Storage
-            const storagePath = `musics/global/${Date.now()}_${selectedFile.name}`;
-            const storageRef = sRef(storage, storagePath);
-            const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+            try {
+                // On stocke dans musics/base (la liste commune)
+                await push(ref(db, 'musics/base'), {
+                    title: title,
+                    artist: artist || "Artiste Inconnu",
+                    url: base64String,
+                    addedBy: auth.currentUser.uid,
+                    createdAt: Date.now()
+                });
 
-            uploadTask.on('state_changed', 
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    progressBar.style.width = progress + '%';
-                }, 
-                (error) => {
-                    alert("Erreur upload storage : " + error.message);
-                    btnSubmit.disabled = false;
-                }, 
-                async () => {
-                    // 2. Récupérer le lien final
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-
-                    // 3. Enregistrer dans la Database
-                    await push(dbRef(db, 'musics/global'), {
-                        title: title,
-                        artist: artist || "Artiste Inconnu",
-                        url: downloadURL,
-                        addedBy: auth.currentUser.uid,
-                        createdAt: Date.now()
-                    });
-
-                    statusText.innerText = "✅ Succès ! Musique ajoutée.";
-                    statusText.className = "text-center text-[10px] font-black uppercase mt-2 text-green-500";
-                    
-                    // Reset
-                    setTimeout(() => location.reload(), 2000);
-                }
-            );
+                statusText.innerText = "✨ Ajouté avec succès !";
+                statusText.className = "text-center text-[10px] font-black uppercase mt-2 text-indigo-500";
+                
+                setTimeout(() => window.location.href = 'Admin.html', 1500);
+            } catch (e) {
+                alert("Erreur de base de données");
+                btnSubmit.disabled = false;
+            }
         };
-
-        if (localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
     </script>
 </body>
 </html>
