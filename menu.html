@@ -153,7 +153,7 @@
             
             const roomRef = ref(db, `rooms/${code}`);
             
-            // On prépare le compte à rebours de sécurité (heure serveur)[cite: 2]
+            // On prépare le compte à rebours de sécurité (heure serveur)
             onDisconnect(roomRef).update({
                 expiresAt: serverTimestamp() 
             });
@@ -162,7 +162,7 @@
                 state: 'waiting', 
                 host: auth.currentUser.uid, 
                 createdAt: serverTimestamp(),
-                expiresAt: null // Actif par défaut
+                expiresAt: null 
             });
 
             window.location.href = `host.html?room=${code}`;
@@ -172,30 +172,45 @@
         document.getElementById('btn-go').onclick = async (e) => {
             e.preventDefault();
             const code = document.getElementById('room-code').value.toUpperCase().trim();
-            if(code.length === 5) {
-                const uid = auth.currentUser.uid;
-                const roomSnap = await get(ref(db, `rooms/${code}`));
+            const user = auth.currentUser;
+
+            if(code.length === 5 && user) {
+                const uid = user.uid;
+                const roomRef = ref(db, `rooms/${code}`);
                 
-                if (roomSnap.exists()) {
-                    const userSnap = await get(ref(db, `users/${uid}`));
-                    const userData = userSnap.val();
+                try {
+                    const roomSnap = await get(roomRef);
                     
-                    const playerRef = ref(db, `rooms/${code}/players/${uid}`);
-                    
-                    // Inscription du joueur[cite: 2]
-                    await set(playerRef, {
-                        pseudo: userData?.pseudo || "Anonyme",
-                        color: userData?.color || "#a0c4ff",
-                        isReady: true
-                    });
+                    if (roomSnap.exists()) {
+                        const userSnap = await get(ref(db, `users/${uid}`));
+                        const userData = userSnap.val();
+                        
+                        // On pointe précisément sur l'ID du joueur dans la sous-collection players
+                        const playerRef = ref(db, `rooms/${code}/players/${uid}`);
+                        
+                        console.log("Tentative d'inscription du joueur:", uid);
 
-                    // Suppression automatique du joueur s'il quitte la page[cite: 2]
-                    onDisconnect(playerRef).remove();
+                        // Inscription du joueur
+                        await set(playerRef, {
+                            pseudo: userData?.pseudo || "Anonyme",
+                            color: userData?.color || "#a0c4ff",
+                            isReady: true,
+                            joinedAt: serverTimestamp()
+                        });
 
-                    window.location.href = `player.html?room=${code}`;
-                } else {
-                    alert("Room inexistante !");
+                        // Sécurité : suppression si le joueur quitte la page
+                        onDisconnect(playerRef).remove();
+
+                        window.location.href = `player.html?room=${code}`;
+                    } else {
+                        alert("Room inexistante !");
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de la tentative de rejoindre:", error);
+                    alert("Une erreur est survenue.");
                 }
+            } else if (!user) {
+                alert("Vous n'êtes pas connecté.");
             }
         };
 
