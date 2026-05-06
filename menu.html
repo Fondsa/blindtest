@@ -177,22 +177,36 @@
             window.location.href = `host.html?room=${code}`;
         };
 
-        // Fonction Rejoindre Room (GO)
-        document.getElementById('btn-go').onclick = (e) => {
-            e.preventDefault();
-            const code = document.getElementById('room-code').value.toUpperCase().trim();
+       // Remplace ton ancienne fonction "btn-go" par celle-ci
+document.getElementById('btn-go').onclick = async (e) => {
+    e.preventDefault();
+    const code = document.getElementById('room-code').value.toUpperCase().trim();
+    
+    if(code.length === 5) {
+        if(auth.currentUser) {
+            const uid = auth.currentUser.uid;
             
-            if(code.length === 5) {
-                // On renforce le stockage de l'ID avant de partir
-                if(auth.currentUser) {
-                    localStorage.setItem('playerId', auth.currentUser.uid);
-                    window.location.href = `player.html?room=${code}`;
-                }
-            } else {
-                alert("Entre un code à 5 lettres !");
-            }
-        };
+            // 1. Récupérer le pseudo de l'utilisateur (on suppose qu'il est dans users/uid)
+            const userSnap = await get(ref(db, `users/${uid}`));
+            const pseudo = userSnap.exists() ? userSnap.val().pseudo : "Joueur";
+            const color = userSnap.exists() ? userSnap.val().color : "#ff9aa2";
 
+            // 2. L'INSCRIRE dans la room sur Firebase
+            // C'est cette étape qui fera bouger la liste chez le Host !
+            await set(ref(db, `rooms/${code}/players/${uid}`), {
+                pseudo: pseudo,
+                color: color,
+                ready: true // Optionnel
+            });
+
+            // 3. Une fois inscrit, on change de page
+            localStorage.setItem('playerId', uid);
+            window.location.href = `player.html?room=${code}`;
+        }
+    } else {
+        alert("Entre un code à 5 lettres !");
+    }
+};
         // Gestion du Drawer
         const drw = document.getElementById('drawer');
         document.getElementById('open-drawer').onclick = () => drw.classList.add('open');
