@@ -3,37 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ma Bibliothèque - Blindtest</title>
+    <title>Host - Blindtest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
         body { 
             font-family: 'Fredoka', sans-serif; 
-            margin: 0; padding: 0; height: 100dvh; overflow: hidden; 
-            display: flex; flex-direction: column; background-color: #ffffff;
+            margin: 0; padding: 0; 
+            height: 100dvh; 
+            overflow: hidden; 
+            display: flex; flex-direction: column; 
+            background-color: #ffffff;
             transition: background-color 0.3s ease;
         }
         .dark body { background-color: #000000; }
-        #bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; overflow: hidden; }
-        .cloud { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6; animation: floatClouds 15s infinite alternate ease-in-out; }
-        .cloud-pink { background: #ffdce0; width: 60vw; height: 60vw; top: -10%; left: -5%; }
-        .cloud-blue { background: #dcf2ff; width: 70vw; height: 70vw; bottom: -15%; right: -5%; }
-        @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
+        .dark #bg-container { display: none; }
 
-        .btn-game { border-radius: 20px; color: white; font-weight: 700; border-bottom: 5px solid rgba(0,0,0,0.15); transition: all 0.1s ease; text-transform: uppercase; }
-        .btn-game:active { transform: translateY(3px); border-bottom-width: 2px; }
-        .btn-primary { background-color: #ff9aa2; }
-        .btn-disabled { background-color: #d1d5db; border-bottom: none; transform: none; cursor: not-allowed; }
+        /* ☁️ NUAGES PASTEL */
+        #bg-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1;
+            overflow: hidden;
+        }
+        .cloud {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            opacity: 0.6;
+            animation: floatClouds 15s infinite alternate ease-in-out;
+        }
+        .cloud-pink { background: #ffdce0; width: 65vw; height: 65vw; top: -15%; left: -10%; }
+        .cloud-blue { background: #dcf2ff; width: 75vw; height: 75vw; bottom: -20%; right: -5%; animation-delay: -4s; }
+        .cloud-green { background: #dcffe4; width: 55vw; height: 55vw; top: 25%; left: 15%; animation-delay: -7s; }
 
-        .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
+        @keyframes floatClouds {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(8%, 8%) scale(1.05); }
+        }
+
+        /* 🎮 BOUTONS PHYSIQUES */
+        .btn-game {
+            border-radius: 24px;
+            color: white;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            border-bottom: 6px solid rgba(0,0,0,0.15);
+            text-shadow: 0px 1px 2px rgba(0,0,0,0.1);
+        }
+        .btn-game:active { transform: translateY(4px); border-bottom-width: 2px; }
+        
+        .btn-start { background-color: #b9fbc0; color: #1a531b; }
+        .btn-quit { background-color: #ff9aa2; }
+
+        /* 🍱 BENTO CARDS */
+        .bento-card {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 32px;
+        }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
 
-        /* Scrollbar personnalisée pour la bibliothèque */
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-        .dark .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+        #player-list {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        #player-list::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
@@ -41,185 +76,90 @@
     <div id="bg-container">
         <div class="cloud cloud-pink"></div>
         <div class="cloud cloud-blue"></div>
+        <div class="cloud cloud-green"></div>
     </div>
 
-    <main class="relative z-10 flex h-full w-full p-4 md:p-8 gap-6 flex-col md:flex-row">
+    <main class="relative z-10 flex flex-col items-center h-full w-full p-6">
         
-        <!-- SECTION GAUCHE : BIBLIOTHÈQUE -->
-        <div class="flex-1 flex flex-col min-h-0">
-            <div class="flex items-center justify-between mb-4 px-2">
-                <h2 class="text-2xl font-black text-gray-800 dark:text-white italic uppercase tracking-tighter">Ma <span class="text-rose-400">Bibliothèque</span></h2>
-                <span id="music-count" class="bg-rose-100 text-rose-500 text-[10px] font-bold px-3 py-1 rounded-full uppercase">0 sons</span>
-            </div>
-
-            <div id="library-container" class="bento-card flex-1 overflow-y-auto custom-scroll p-4 space-y-3">
-                <!-- Les musiques s'afficheront ici -->
-                <div id="loader-library" class="h-full flex items-center justify-center text-gray-400 text-sm font-medium italic">
-                    Chargement de vos sons...
-                </div>
+        <!-- HEADER : CODE DE LA ROOM -->
+        <div class="w-full max-w-lg mt-4 mb-6">
+            <div class="bento-card p-6 text-center">
+                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Code de la Room</p>
+                <h2 id="display-code" class="text-6xl font-black text-gray-800 dark:text-white tracking-tighter">-----</h2>
             </div>
         </div>
 
-        <!-- SECTION DROITE : FORMULAIRE D'IMPORTATION -->
-        <div class="w-full md:w-[400px] flex flex-col justify-center">
-            <div class="bento-card p-6 space-y-4">
-                <div class="text-center mb-2">
-                    <h1 class="text-2xl font-black text-gray-800 dark:text-white italic tracking-tighter uppercase">Importer</h1>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Titre</label>
-                    <input type="text" id="track-title" placeholder="Ex: Pokémon Theme" 
-                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-rose-300 outline-none font-bold">
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Artiste</label>
-                    <input type="text" id="track-artist" placeholder="Ex: Jason Paige" 
-                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-rose-300 outline-none font-bold">
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Fichier Audio (Max 2.5 Mo)</label>
-                    <input type="file" id="track-file" accept="audio/*" 
-                        class="w-full text-sm text-gray-500 dark:text-gray-300">
-                </div>
-
-                <div id="upload-status" class="hidden text-center text-[10px] font-black py-3 rounded-xl transition-all uppercase tracking-widest"></div>
-
-                <button id="btn-upload" class="btn-game btn-primary w-full py-4 mt-2">Enregistrer en base</button>
-                
-                <button onclick="window.location.href='menu.html'" class="w-full text-gray-400 font-bold text-[11px] uppercase tracking-widest hover:text-rose-400 transition-colors mt-2">Retour au menu</button>
+        <!-- LISTE DES JOUEURS -->
+        <div class="flex-1 w-full max-w-lg bento-card p-6 mb-6 overflow-hidden flex flex-col">
+            <h3 class="text-sm font-black text-gray-700 dark:text-gray-200 mb-4 flex justify-between">
+                <span>JOUEURS PRÊTS</span>
+                <span id="player-count" class="bg-white/50 dark:bg-black/20 px-2 rounded-lg">0</span>
+            </h3>
+            <div id="player-list" class="flex-1 overflow-y-auto space-y-3 text-center">
+                <p class="text-gray-400 italic text-sm mt-10">En attente de joueurs...</p>
             </div>
+        </div>
+
+        <!-- ACTIONS BAS DE PAGE -->
+        <div class="w-full max-w-lg grid grid-cols-2 gap-4 pb-4">
+            <button onclick="window.location.href='menu.html'" class="btn-game btn-quit p-4 text-sm font-black italic">QUITTER</button>
+            <button id="start-game" class="btn-game btn-start p-4 text-sm font-black italic uppercase">Lancer !</button>
         </div>
 
     </main>
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const btnUpload = document.getElementById('btn-upload');
-        const status = document.getElementById('upload-status');
-        const libraryContainer = document.getElementById('library-container');
-        const musicCountLabel = document.getElementById('music-count');
-        
-        let currentUserId = null;
+        // APPLIQUER LE THÈME SOMBRE SI ACTIVÉ
+        if (localStorage.getItem('dark') === 'true') {
+            document.documentElement.classList.add('dark');
+        }
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUserId = user.uid;
-                loadLibrary();
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+        const displayCode = document.getElementById('display-code');
 
-        // --- CHARGEMENT DE LA BIBLIOTHÈQUE ---
-        function loadLibrary() {
-            const userMusicRef = ref(db, `musics/users/${currentUserId}`);
-            onValue(userMusicRef, (snapshot) => {
-                libraryContainer.innerHTML = "";
-                const data = snapshot.val();
-                
-                if (!data) {
-                    libraryContainer.innerHTML = `<div class="h-full flex items-center justify-center text-gray-400 text-sm font-medium italic">Aucun son importé pour le moment.</div>`;
-                    musicCountLabel.innerText = "0 sons";
-                    return;
-                }
+        if (!roomId) {
+            window.location.href = 'menu.html';
+        } else {
+            displayCode.innerText = roomId;
+        }
 
-                const entries = Object.entries(data).reverse(); // Plus récent en haut
-                musicCountLabel.innerText = `${entries.length} sons`;
+        const playersRef = ref(db, `rooms/${roomId}/players`);
+        onValue(playersRef, (snapshot) => {
+            const list = document.getElementById('player-list');
+            const count = document.getElementById('player-count');
+            list.innerHTML = "";
+            
+            if (snapshot.exists()) {
+                const players = snapshot.val();
+                const entries = Object.entries(players);
+                count.innerText = entries.length;
 
-                entries.forEach(([key, music]) => {
+                entries.forEach(([id, data]) => {
                     const card = document.createElement('div');
-                    card.className = "flex items-center justify-between p-3 bg-white/40 dark:bg-white/5 rounded-2xl border border-white/50 dark:border-white/10 hover:scale-[1.01] transition-transform";
+                    card.className = "flex items-center justify-between p-3 bg-white/80 dark:bg-zinc-900/50 rounded-2xl border-b-4 border-black/5";
                     card.innerHTML = `
-                        <div class="flex items-center gap-3 overflow-hidden">
-                            <div class="w-10 h-10 bg-rose-100 dark:bg-rose-900/30 rounded-xl flex items-center justify-center text-xl shrink-0">🎵</div>
-                            <div class="truncate">
-                                <h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${music.title}</h4>
-                                <p class="text-[10px] font-bold text-gray-400 uppercase truncate">${music.artist || 'Inconnu'}</p>
-                            </div>
+                        <div class="flex items-center gap-3 text-left">
+                            <div class="w-3 h-3 rounded-full" style="background:${data.color || '#ff9aa2'}"></div>
+                            <span class="font-bold dark:text-white">${data.pseudo}</span>
                         </div>
-                        <button onclick="deleteMusic('${key}')" class="p-2 text-gray-400 hover:text-rose-500 transition-colors">🗑️</button>
+                        <span class="text-xs font-black text-gray-400">PRÊT</span>
                     `;
-                    libraryContainer.appendChild(card);
+                    list.appendChild(card);
                 });
-            });
-        }
-
-        // --- SUPPRESSION ---
-        window.deleteMusic = (key) => {
-            if(confirm("Supprimer cette musique de ta bibliothèque ?")) {
-                remove(ref(db, `musics/users/${currentUserId}/${key}`));
+            } else {
+                list.innerHTML = `<p class="text-center text-gray-400 italic text-sm mt-10">En attente de joueurs...</p>`;
+                count.innerText = "0";
             }
-        };
-
-        // --- LOGIQUE D'UPLOAD (Base64) ---
-        const toBase64 = file => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
         });
 
-        btnUpload.onclick = async () => {
-            const file = document.getElementById('track-file').files[0];
-            const title = document.getElementById('track-title').value.trim();
-            const artist = document.getElementById('track-artist').value.trim();
-
-            if (!file || !title) {
-                showStatus("Titre et fichier requis !", "bg-red-100 text-red-600");
-                return;
-            }
-
-            if (file.size > 2.5 * 1024 * 1024) {
-                showStatus("Fichier trop lourd (Max 2.5 Mo)", "bg-red-100 text-red-600");
-                return;
-            }
-
-            try {
-                btnUpload.disabled = true;
-                btnUpload.classList.add('btn-disabled');
-                btnUpload.innerText = "Traitement...";
-                showStatus("Conversion du son...", "bg-blue-100 text-blue-600 animate-pulse");
-
-                const base64Data = await toBase64(file);
-
-                showStatus("Enregistrement...", "bg-amber-100 text-amber-700");
-                
-                await push(ref(db, `musics/users/${currentUserId}`), {
-                    title: title,
-                    artist: artist || "Inconnu",
-                    url: base64Data,
-                    createdAt: Date.now()
-                });
-
-                showStatus("✅ Ajouté !", "bg-green-100 text-green-700");
-                
-                // Reset Form
-                document.getElementById('track-title').value = "";
-                document.getElementById('track-artist').value = "";
-                document.getElementById('track-file').value = "";
-
-            } catch (error) {
-                showStatus("Erreur d'envoi", "bg-red-100 text-red-600");
-            } finally {
-                btnUpload.disabled = false;
-                btnUpload.classList.remove('btn-disabled');
-                btnUpload.innerText = "Enregistrer en base";
-            }
+        document.getElementById('start-game').onclick = () => {
+            update(ref(db, `rooms/${roomId}`), { state: 'playing' });
+            window.location.href = `game_host.html?room=${roomId}`;
         };
-
-        function showStatus(msg, classes) {
-            status.innerText = msg;
-            status.className = `text-center text-[10px] font-black py-3 rounded-xl ${classes} uppercase tracking-widest`;
-            status.classList.remove('hidden');
-        }
-
-        if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
     </script>
 </body>
 </html>
