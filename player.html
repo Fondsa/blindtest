@@ -136,6 +136,7 @@
 
             onDisconnect(playerRef).remove();
 
+            // Synchro Infos Joueur
             onValue(playerRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const d = snapshot.val();
@@ -145,14 +146,12 @@
                 }
             });
 
+            // Synchro État de la Room
             onValue(roomRef, (snapshot) => {
                 const data = snapshot.val();
-                if (!data) {
-                    window.location.href = 'menu.html';
-                    return;
-                }
+                if (!data) return;
 
-                // Musique et Reset
+                // Musique et Reset (Nouvelle manche)
                 if (data.state === 'playing' && data.currentAudio) {
                     if (audioPlayer.dataset.lastStart !== String(data.startTime)) {
                         audioPlayer.src = data.currentAudio;
@@ -180,33 +179,34 @@
                         statusText.className = "text-xl font-black text-rose-500 uppercase italic tracking-tighter text-center opacity-50";
                     }
                 } else if (data.state === 'playing' && !data.buzzedBy) {
+                    // Si la régie remet à zéro sans changer de musique
                     canBuzz = true;
                     buzzerBtn.disabled = false;
-                    statusText.innerText = "RE-BUZZ POSSIBLE !";
+                    statusText.innerText = "BUZZ DISPONIBLE !";
                     statusText.className = "text-xl font-black text-gray-800 dark:text-white uppercase italic tracking-tighter text-center";
                 }
             });
 
-            // LOGIQUE DU BUZZER (Modification pour Historique)
+            // LOGIQUE DU BUZZER
             buzzerBtn.onclick = () => {
                 if (!canBuzz) return;
                 
-                // 1. On s'inscrit immédiatement dans l'historique de la room
-                // Cela permet à la régie de voir l'ordre des buzz même s'ils arrivent à quelques ms d'écart
+                // 1. Inscription immédiate dans l'historique (pour le classement de l'hôte)
                 update(ref(db, `rooms/${roomId}/buzzHistory`), {
                     [playerId]: serverTimestamp()
                 });
 
-                // 2. On tente de prendre la place du "Premier" (buzzedBy)
+                // 2. Tentative de verrouillage du "Premier" (buzzedBy) via transaction
                 const buzzedRef = ref(db, `rooms/${roomId}/buzzedBy`);
                 runTransaction(buzzedRef, (currentData) => {
                     if (currentData === null) {
                         return playerId; 
                     }
-                    return; 
+                    return; // Quelqu'un d'autre a été plus rapide sur le serveur
                 });
                 
-                canBuzz = false; // Sécurité locale
+                canBuzz = false;
+                buzzerBtn.disabled = true;
             };
 
             document.getElementById('btn-quit').onclick = async () => {
