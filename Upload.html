@@ -29,7 +29,6 @@
         .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
 
-        /* Style du bouton input file classique */
         input::file-selector-button {
             background: #ff9aa2;
             border: none;
@@ -39,12 +38,25 @@
             font-weight: bold;
             margin-right: 10px;
             cursor: pointer;
-            transition: 0.2s;
         }
-        input::file-selector-button:hover { background: #ff8690; }
 
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        
+        /* Styles spécifiques pour les boutons de la liste */
+        .btn-action {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .btn-action:active { transform: scale(0.9); }
+        .btn-play { background-color: #ff9aa2; color: white; }
+        .btn-delete { background-color: #ef4444; color: white; }
     </style>
 </head>
 <body>
@@ -109,14 +121,13 @@
         const musicCountLabel = document.getElementById('music-count');
         
         let currentUserId = null;
-        let currentAudio = null; // Pour stopper le son précédent si on en joue un nouveau
+        let currentAudio = null;
 
         onAuthStateChanged(auth, (user) => {
             if (user) { currentUserId = user.uid; loadLibrary(); }
             else { window.location.href = 'index.html'; }
         });
 
-        // --- CHARGEMENT BIBLIOTHÈQUE ---
         function loadLibrary() {
             onValue(ref(db, `musics/users/${currentUserId}`), (snapshot) => {
                 libraryContainer.innerHTML = "";
@@ -135,55 +146,47 @@
                     card.className = "flex items-center justify-between p-3 bg-white/40 dark:bg-white/5 rounded-2xl border border-white/50 dark:border-white/10";
                     card.innerHTML = `
                         <div class="flex items-center gap-3 overflow-hidden">
-                            <button id="play-${key}" onclick="previewMusic('${key}')" class="w-10 h-10 bg-rose-400 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg active:scale-95 transition-transform">▶️</button>
+                            <div class="w-10 h-10 bg-rose-100 dark:bg-rose-900/30 rounded-xl flex items-center justify-center text-xl shrink-0">🎵</div>
                             <div class="truncate">
                                 <h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${music.title}</h4>
                                 <p class="text-[10px] font-bold text-gray-400 uppercase truncate">${music.artist || 'Inconnu'}</p>
                             </div>
                         </div>
-                        <button onclick="deleteMusic('${key}')" class="p-2 text-gray-400 hover:text-rose-500 transition-colors">🗑️</button>
+                        <div class="flex items-center gap-2 shrink-0 ml-2">
+                            <button id="play-${key}" onclick="previewMusic('${key}')" class="btn-action btn-play">▶️</button>
+                            <button onclick="deleteMusic('${key}')" class="btn-action btn-delete">🗑️</button>
+                        </div>
                     `;
                     libraryContainer.appendChild(card);
                 });
             });
         }
 
-        // --- LECTURE AUDIO À LA DEMANDE ---
         window.previewMusic = async (key) => {
             const playBtn = document.getElementById(`play-${key}`);
-            
-            // Si on clique sur un son déjà en cours de lecture : on stoppe
             if (currentAudio && !currentAudio.paused && playBtn.innerText === "⏹️") {
                 currentAudio.pause();
                 playBtn.innerText = "▶️";
                 return;
             }
-
-            // Stopper l'ancien son s'il y en a un
             if (currentAudio) {
                 currentAudio.pause();
                 document.querySelectorAll('[id^="play-"]').forEach(btn => btn.innerText = "▶️");
             }
-
-            playBtn.innerText = "⏳"; // Indicateur de chargement
-
+            playBtn.innerText = "⏳";
             try {
-                // On récupère l'URL (Base64) uniquement maintenant
                 const snap = await get(ref(db, `musics/users/${currentUserId}/${key}/url`));
                 if (snap.exists()) {
                     currentAudio = new Audio(snap.val());
                     currentAudio.play();
                     playBtn.innerText = "⏹️";
-                    
                     currentAudio.onended = () => { playBtn.innerText = "▶️"; };
                 }
             } catch (e) {
-                alert("Erreur de lecture");
                 playBtn.innerText = "▶️";
             }
         };
 
-        // --- SUPPRESSION ---
         window.deleteMusic = (key) => {
             if(confirm("Supprimer ce son ?")) {
                 if(currentAudio) currentAudio.pause();
@@ -191,7 +194,6 @@
             }
         };
 
-        // --- UPLOAD ---
         const toBase64 = file => new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -203,14 +205,9 @@
             const file = document.getElementById('track-file').files[0];
             const title = document.getElementById('track-title').value.trim();
             const artist = document.getElementById('track-artist').value.trim();
-
             if (!file || !title) return showStatus("Titre et fichier requis !", "bg-red-100 text-red-600");
-            if (file.size > 2.5 * 1024 * 1024) return showStatus("Fichier trop lourd !", "bg-red-100 text-red-600");
-
             btnUpload.disabled = true;
             btnUpload.classList.add('btn-disabled');
-            showStatus("Traitement...", "bg-blue-100 text-blue-600 animate-pulse");
-
             try {
                 const base64Data = await toBase64(file);
                 await push(ref(db, `musics/users/${currentUserId}`), {
