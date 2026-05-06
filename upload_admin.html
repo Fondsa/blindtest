@@ -21,29 +21,36 @@
         .cloud-blue { background: #dcf2ff; width: 70vw; height: 70vw; bottom: -15%; right: -5%; }
         @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
 
-        .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
+        .btn-game {
+            border-radius: 20px;
+            color: white;
+            font-weight: 700;
+            border-bottom: 5px solid rgba(0,0,0,0.15);
+            transition: all 0.1s ease;
+            text-transform: uppercase;
+        }
+        .btn-game:active { transform: translateY(3px); border-bottom-width: 2px; }
+        .btn-primary { background-color: #6366f1; }
+        .btn-disabled { background-color: #d1d5db; border-bottom: none; transform: none; cursor: not-allowed; }
+
+        .bento-card {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+        }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
 
-        /* ZONE DRAG & DROP + CLIC */
-        #drop-zone {
-            border: 3px dashed #6366f1;
+        input::file-selector-button {
+            background: #6366f1;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        #drop-zone.drag-over {
-            background: rgba(99, 102, 241, 0.2);
-            border-color: #4f46e5;
-            transform: scale(1.02);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        input[type="text"] { background: white; border-radius: 15px; padding: 12px; width: 100%; font-weight: 600; border: 2px solid transparent; transition: 0.2s; }
-        input[type="text"]:focus { border-color: #6366f1; outline: none; }
-        .dark input[type="text"] { background: rgba(255,255,255,0.1); color: white; }
-
-        .btn-upload { background: #6366f1; color: white; font-weight: 800; padding: 16px; border-radius: 20px; width: 100%; transition: 0.2s; border-bottom: 4px solid #4f46e5; }
-        .btn-upload:active { transform: translateY(2px); border-bottom-width: 2px; }
-        .btn-upload:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
     </style>
 </head>
 <body>
@@ -54,43 +61,46 @@
     </div>
 
     <main class="relative z-10 flex flex-col h-full w-full p-6 items-center justify-center">
-        <div class="w-full max-w-md">
-            <!-- HEADER -->
-            <div class="flex items-center gap-4 mb-8">
+        
+        <div class="w-full max-w-md space-y-6">
+            <div class="flex items-center gap-4 mb-2">
                 <button onclick="history.back()" class="bento-card w-12 h-12 flex items-center justify-center text-lg">⬅️</button>
-                <h1 class="text-2xl font-black text-gray-800 dark:text-white italic uppercase tracking-tighter">Upload <span class="text-indigo-500">Global</span></h1>
+                <div>
+                    <h1 class="text-2xl font-black text-gray-800 dark:text-white italic uppercase tracking-tighter">Admin <span class="text-indigo-500">Upload</span></h1>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ajout à la liste commune</p>
+                </div>
             </div>
 
             <div class="bento-card p-6 space-y-4">
-                <!-- ZONE HYBRIDE -->
-                <div id="drop-zone" class="p-10 rounded-3xl flex flex-col items-center justify-center text-center">
-                    <div id="icon-container" class="text-5xl mb-3">📁</div>
-                    <p id="file-name" class="text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                        Glisser le MP3 <br> <span class="text-[9px] opacity-60">ou cliquer pour choisir</span>
-                    </p>
-                    <input type="file" id="file-input" accept="audio/mpeg, audio/wav" class="hidden">
+                <!-- Titre -->
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Titre de la musique</label>
+                    <input type="text" id="track-title" placeholder="Ex: Master of Puppets" 
+                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-indigo-300 outline-none">
                 </div>
 
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-[9px] font-black text-gray-400 uppercase ml-2 tracking-widest">Nom de la musique</label>
-                        <input type="text" id="title" placeholder="Ex: Master of Puppets">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-gray-400 uppercase ml-2 tracking-widest">Artiste</label>
-                        <input type="text" id="artist" placeholder="Ex: Metallica">
-                    </div>
+                <!-- Artiste -->
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Artiste</label>
+                    <input type="text" id="track-artist" placeholder="Ex: Metallica" 
+                        class="w-full p-3 rounded-xl bg-white/50 dark:bg-black/20 dark:text-white border-none focus:ring-2 focus:ring-indigo-300 outline-none">
                 </div>
 
-                <button id="btn-submit" class="btn-upload mt-4 italic uppercase tracking-tighter">
-                    Ajouter à la bibliothèque
-                </button>
-                
-                <p id="status" class="text-center text-[10px] font-black uppercase mt-2 hidden"></p>
+                <!-- Fichier -->
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">Fichier MP3 (Max 30s / 2.5Mo)</label>
+                    <input type="file" id="track-file" accept="audio/*" 
+                        class="w-full text-sm text-gray-500 dark:text-gray-300">
+                </div>
+
+                <!-- Status -->
+                <div id="upload-status" class="hidden text-center text-[10px] font-black py-3 rounded-xl transition-all uppercase tracking-widest"></div>
+
+                <!-- Bouton -->
+                <button id="btn-upload" class="btn-game btn-primary w-full py-4 mt-2 italic">Enregistrer dans la base globale</button>
             </div>
-            
-            <p class="text-center text-[9px] text-gray-400 font-bold mt-6 uppercase tracking-widest opacity-50">Format MP3 uniquement - Max 30 secondes</p>
         </div>
+
     </main>
 
     <script type="module">
@@ -98,106 +108,84 @@
         import { ref, push, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        if (localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
-
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const fileName = document.getElementById('file-name');
-        const btnSubmit = document.getElementById('btn-submit');
-        const statusText = document.getElementById('status');
-        const iconContainer = document.getElementById('icon-container');
-
-        let base64String = "";
+        const btnUpload = document.getElementById('btn-upload');
+        const status = document.getElementById('upload-status');
 
         // Sécurité Admin
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = 'index.html'; return; }
             const snap = await get(ref(db, `users/${user.uid}`));
-            if (!snap.exists() || !snap.val().isAdmin) window.location.href = 'menu.html';
+            if (!snap.exists() || !snap.val().isAdmin) {
+                window.location.href = 'menu.html';
+            }
         });
 
-        // Click sur la zone pour ouvrir l'explorateur
-        dropZone.onclick = () => fileInput.click();
-
-        // Drag & Drop events
-        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); };
-        dropZone.ondragleave = () => dropZone.classList.remove('drag-over');
-        dropZone.ondrop = (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
-        };
-
-        fileInput.onchange = (e) => { if (e.target.files.length > 0) handleFile(e.target.files[0]); };
-
-        function handleFile(file) {
-            if (!file.type.startsWith('audio/')) return alert("Fichier audio uniquement !");
-            
-            statusText.classList.remove('hidden');
-            statusText.innerText = "Traitement audio...";
-            statusText.className = "text-center text-[10px] font-black uppercase mt-2 text-indigo-500 animate-pulse";
-
+        const toBase64 = file => new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                audioContext.decodeAudioData(e.target.result, (buffer) => {
-                    if (buffer.duration > 31) {
-                        alert("Fichier trop long ! (Max 30s)");
-                        resetFile();
-                        return;
-                    }
-                    
-                    const blob = new Blob([e.target.result], { type: file.type });
-                    const readerBase64 = new FileReader();
-                    readerBase64.readAsDataURL(blob);
-                    readerBase64.onloadend = () => {
-                        base64String = readerBase64.result;
-                        fileName.innerHTML = `<span class="text-indigo-500">Prêt :</span><br>${file.name}`;
-                        iconContainer.innerText = "✅";
-                        statusText.innerText = "Fichier validé !";
-                        statusText.className = "text-center text-[10px] font-black uppercase mt-2 text-green-500";
-                    };
-                });
-            };
-            reader.readAsArrayBuffer(file);
-        }
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
 
-        function resetFile() {
-            fileInput.value = "";
-            base64String = "";
-            iconContainer.innerText = "📁";
-            fileName.innerHTML = 'Glisser le MP3 <br> <span class="text-[9px] opacity-60">ou cliquer pour choisir</span>';
-            statusText.classList.add('hidden');
-        }
+        btnUpload.onclick = async () => {
+            const file = document.getElementById('track-file').files[0];
+            const title = document.getElementById('track-title').value.trim();
+            const artist = document.getElementById('track-artist').value.trim();
 
-        btnSubmit.onclick = async () => {
-            const title = document.getElementById('title').value.trim();
-            const artist = document.getElementById('artist').value.trim();
+            if (!file || !title) {
+                showStatus("Titre et fichier requis !", "bg-red-100 text-red-600 border border-red-200");
+                return;
+            }
 
-            if (!base64String || !title) return alert("Musique et Titre manquants !");
-
-            btnSubmit.disabled = true;
-            statusText.innerText = "🚀 Envoi en cours...";
+            // Vérification taille (Base64 augmente la taille de 33%, donc 2.5Mo max fichier source)
+            if (file.size > 2.5 * 1024 * 1024) {
+                showStatus("Fichier trop lourd (Max 2.5 Mo)", "bg-red-100 text-red-600 border border-red-200");
+                return;
+            }
 
             try {
-                // On stocke dans musics/base (la liste commune)
+                btnUpload.disabled = true;
+                btnUpload.classList.add('btn-disabled');
+                btnUpload.innerText = "Traitement...";
+                showStatus("Conversion en cours...", "bg-indigo-100 text-indigo-600 animate-pulse");
+
+                const base64Data = await toBase64(file);
+
+                showStatus("Upload vers la base globale...", "bg-amber-100 text-amber-700");
+
+                // Envoi vers musics/base (la liste commune)
                 await push(ref(db, 'musics/base'), {
                     title: title,
                     artist: artist || "Artiste Inconnu",
-                    url: base64String,
-                    addedBy: auth.currentUser.uid,
-                    createdAt: Date.now()
+                    url: base64Data,
+                    createdAt: Date.now(),
+                    isAdminFile: true
                 });
 
-                statusText.innerText = "✨ Ajouté avec succès !";
-                statusText.className = "text-center text-[10px] font-black uppercase mt-2 text-indigo-500";
+                showStatus("✅ Musique ajoutée avec succès !", "bg-green-100 text-green-700 border border-green-200");
                 
-                setTimeout(() => window.location.href = 'Admin.html', 1500);
-            } catch (e) {
-                alert("Erreur de base de données");
-                btnSubmit.disabled = false;
+                // Reset
+                document.getElementById('track-title').value = "";
+                document.getElementById('track-artist').value = "";
+                document.getElementById('track-file').value = "";
+
+            } catch (error) {
+                console.error(error);
+                showStatus("Erreur : " + error.message, "bg-red-100 text-red-600");
+            } finally {
+                btnUpload.disabled = false;
+                btnUpload.classList.remove('btn-disabled');
+                btnUpload.innerText = "Enregistrer dans la base globale";
             }
         };
+
+        function showStatus(msg, classes) {
+            status.innerText = msg;
+            status.className = `text-center text-[10px] font-black py-3 rounded-xl ${classes} uppercase tracking-widest`;
+            status.classList.remove('hidden');
+        }
+
+        if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
     </script>
 </body>
 </html>
