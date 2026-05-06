@@ -57,9 +57,8 @@
 
         <!-- ECRAN DE RÉVÉLATION -->
         <div class="bento-card p-4 text-center flex flex-col items-center justify-center min-h-[120px]">
-            <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic">Prêt à jouer ?</h2>
+            <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic px-2">Prêt à jouer ?</h2>
             <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
-                <!-- ID artist-name conservé mais utilisé pour afficher le bloc "Titre - Artiste" -->
                 <p id="artist-name" class="text-rose-500 font-bold text-md uppercase italic"></p>
             </div>
             <div id="buzzer-alert" class="hidden mt-2 font-bold text-rose-600 animate-bounce">🚨 BUZZ !</div>
@@ -125,12 +124,13 @@
                     const item = document.createElement('div');
                     item.className = "p-2 bg-white/40 dark:bg-white/5 rounded-xl cursor-pointer hover:bg-white/80 transition-all text-sm font-bold dark:text-white border-l-4 border-transparent hover:border-rose-300";
                     
-                    // --- MODIFICATION ICI : Affichage Nom - Artiste ---
+                    // Formatage du nom complet pour l'affichage dans la liste
                     const fullName = track.artist ? `${track.title} - ${track.artist}` : track.title;
                     item.innerText = fullName;
                     
                     item.onclick = async () => {
                         try {
+                            // Effet de chargement
                             displayTitle.innerText = "Chargement...";
                             displayTitle.classList.add('loading-pulse');
                             
@@ -140,17 +140,19 @@
                                 const audioUrl = trackSnap.val();
                                 audio.src = audioUrl;
                                 
-                                displayTitle.innerText = "Morceau chargé !";
+                                // --- MISE À JOUR : Morceau chargé : Titre - Artiste ---
+                                displayTitle.innerText = `Morceau chargé : ${fullName}`;
                                 displayTitle.classList.remove('loading-pulse');
                                 
-                                // Mise à jour de la zone de révélation au format Titre - Artiste
+                                // Préparation de la zone de révélation
                                 document.getElementById('artist-name').innerText = fullName;
                                 document.getElementById('reveal-zone').classList.add('hidden');
                                 buzzerAlert.classList.add('hidden');
 
+                                // Synchronisation Firebase
                                 update(ref(db, `rooms/${roomId}`), { 
                                     state: 'playing', 
-                                    currentTrack: fullName, // On envoie le nom complet à la DB
+                                    currentTrack: fullName,
                                     currentAudio: audioUrl,
                                     startTime: Date.now(),
                                     buzzedBy: null 
@@ -159,7 +161,7 @@
                                 audio.play(); 
                             }
                         } catch (e) {
-                            displayTitle.innerText = "Erreur !";
+                            displayTitle.innerText = "Erreur de chargement !";
                             console.error(e);
                         }
                     };
@@ -170,18 +172,25 @@
             }
         }
 
+        // Surveillance du buzzer
         onValue(ref(db, `rooms/${roomId}/buzzedBy`), (snapshot) => {
             if (snapshot.exists()) {
                 audio.pause();
                 buzzerAlert.classList.remove('hidden');
-                displayTitle.innerText = "BUZZ DÉTECTÉ !";
+                displayTitle.innerText = "🚨 BUZZ DÉTECTÉ !";
             }
         });
 
+        // Contrôles de la régie
         document.getElementById('ctrl-play').onclick = () => audio.play();
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
-        document.getElementById('ctrl-stop').onclick = () => { audio.pause(); audio.currentTime = 0; };
-        document.getElementById('ctrl-reveal').onclick = () => document.getElementById('reveal-zone').classList.toggle('hidden');
+        document.getElementById('ctrl-stop').onclick = () => { 
+            audio.pause(); 
+            audio.currentTime = 0; 
+        };
+        document.getElementById('ctrl-reveal').onclick = () => {
+            document.getElementById('reveal-zone').classList.toggle('hidden');
+        };
 
     </script>
 </body>
