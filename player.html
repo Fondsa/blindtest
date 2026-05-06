@@ -33,17 +33,14 @@
 
         /* 🚨 LE BUZZER */
         .buzzer-btn {
-            width: 220px;
-            height: 220px;
+            width: 220px; height: 220px;
             border-radius: 50%;
             background: #ff9aa2;
             border: none;
             box-shadow: 0 15px 0 #ffb7bc, 0 20px 30px rgba(255, 154, 162, 0.4);
             cursor: pointer;
             transition: all 0.1s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             outline: none;
             -webkit-tap-highlight-color: transparent;
         }
@@ -103,102 +100,115 @@
         <div class="w-full max-w-xs mb-4 text-center">
             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Connecté à la room</p>
             <p id="display-room" class="text-lg font-black text-gray-800 dark:text-white">----</p>
-            <button onclick="location.href='menu.html'" class="mt-4 text-xs font-bold text-gray-400 underline">Quitter la partie</button>
+            <button id="btn-quit" class="mt-4 text-xs font-bold text-gray-400 underline">Quitter la partie</button>
         </div>
 
     </main>
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, onDisconnect, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, onValue, onDisconnect, set, remove, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // THÈME SOMBRE
         if (localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
 
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
-        const playerId = localStorage.getItem('playerId');
-        const playerRef = ref(db, `rooms/${roomId}/players/${auth.currentUser.uid}`);
-
         const buzzerBtn = document.getElementById('buzzer');
         const statusText = document.getElementById('status-text');
-        const audioPlayer = new Audio();
         
         let canBuzz = false;
+        let audioPlayer = new Audio();
 
-        // C'est ici qu'on met la sécurité !
-        onDisconnect(playerRef).remove();
+        onAuthStateChanged(auth, (user) => {
+            if (!user || !roomId) {
+                window.location.href = 'menu.html';
+                return;
+            }
 
-        if (!roomId || !playerId) {
-            window.location.href = 'menu.html';
-        }
-        document.getElementById('display-room').innerText = roomId;
+            const playerId = user.uid;
+            const playerRef = ref(db, `rooms/${roomId}/players/${playerId}`);
+            const roomRef = ref(db, `rooms/${roomId}`);
 
-        // 1. SYNC AUDIO ET ÉTAT DU JEU
-        onValue(ref(db, `rooms/${roomId}`), (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
+            document.getElementById('display-room').innerText = roomId;
 
-            // Gestion de la musique
-            if (data.state === 'playing' && data.currentAudio) {
-                // On détecte si un nouveau morceau est lancé (via le timestamp startTime)
-                if (audioPlayer.dataset.lastStart !== String(data.startTime)) {
-                    audioPlayer.src = data.currentAudio;
-                    audioPlayer.dataset.lastStart = data.startTime;
-                    audioPlayer.play().catch(e => console.log("L'audio attend un clic utilisateur."));
-                    
-                    // Activer le buzz seulement quand la musique commence
+            // --- SÉCURITÉ DE PRÉSENCE ---
+            onDisconnect(playerRef).remove();
+
+            // --- 1. SYNC INFOS JOUEUR (Nom, Couleur, Score) ---
+            onValue(playerRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const d = snapshot.val();
+                    document.getElementById('player-name').innerText = d.pseudo || "Anonyme";
+                    document.getElementById('player-score').innerText = `${d.score || 0} PTS`;
+                    document.getElementById('player-color').style.backgroundColor = d.color || "#ff9aa2";
+                }
+            });
+
+            // --- 2. LOGIQUE DE JEU & BUZZER ---
+            onValue(roomRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    window.location.href = 'menu.html';
+                    return;
+                }
+
+                // Gestion de la musique
+                if (data.state === 'playing' && data.currentAudio) {
+                    if (audioPlayer.dataset.lastStart !== String(data.startTime)) {
+                        audioPlayer.src = data.currentAudio;
+                        audioPlayer.dataset.lastStart = data.startTime;
+                        audioPlayer.play().catch(() => console.log("En attente d'interaction..."));
+                        
+                        canBuzz = true;
+                        buzzerBtn.disabled = false;
+                        statusText.innerText = "ÉCOUTE BIEN...";
+                        statusText.className = "text-xl font-black text-gray-800 dark:text-white uppercase italic tracking-tighter text-center";
+                    }
+                }
+
+                // Gestion de l'état du Buzz
+                if (data.buzzedBy) {
+                    audioPlayer.pause();
+                    canBuzz = false;
+                    buzzerBtn.disabled = true;
+
+                    if (data.buzzedBy === playerId) {
+                        statusText.innerText = "C'EST À TOI !";
+                        statusText.className = "text-xl font-black text-green-500 uppercase italic tracking-tighter text-center";
+                    } else {
+                        statusText.innerText = "TROP TARD !";
+                        statusText.className = "text-xl font-black text-rose-500 uppercase italic tracking-tighter text-center opacity-50";
+                    }
+                } else if (data.state === 'playing' && !data.buzzedBy) {
+                    // Reset du buzzer par l'hôte sans changer de musique
                     canBuzz = true;
                     buzzerBtn.disabled = false;
-                    statusText.innerText = "ÉCOUTE BIEN...";
-                    statusText.className = "text-xl font-black text-gray-800 dark:text-white uppercase italic tracking-tighter text-center";
+                    statusText.innerText = "RE-BUZZ POSSIBLE !";
                 }
-            }
-
-            // Gestion du Buzz
-            if (data.buzzedBy) {
-                audioPlayer.pause();
-                canBuzz = false;
-                buzzerBtn.disabled = true;
-
-                if (data.buzzedBy === playerId) {
-                    statusText.innerText = "C'EST À TOI !";
-                    statusText.className = "text-xl font-black text-green-500 uppercase italic tracking-tighter text-center";
-                } else {
-                    statusText.innerText = "TROP TARD !";
-                    statusText.className = "text-xl font-black text-rose-500 uppercase italic tracking-tighter text-center opacity-50";
-                }
-            } else if (data.state === 'playing' && !data.buzzedBy) {
-                // Si l'admin reset le buzz sans changer de musique
-                canBuzz = true;
-                buzzerBtn.disabled = false;
-                statusText.innerText = "RE-BUZZ POSSIBLE !";
-                statusText.className = "text-xl font-black text-gray-800 dark:text-white uppercase italic tracking-tighter text-center";
-            }
-        });
-
-        // 2. INFOS JOUEUR (Score, Couleur)
-        onValue(ref(db, `rooms/${roomId}/players/${playerId}`), (snapshot) => {
-            if (snapshot.exists()) {
-                const d = snapshot.val();
-                document.getElementById('player-name').innerText = d.pseudo;
-                document.getElementById('player-score').innerText = `${d.score || 0} PTS`;
-                document.getElementById('player-color').style.backgroundColor = d.color;
-            }
-        });
-
-        // 3. ACTION DU BUZZER
-        buzzerBtn.onclick = () => {
-            if (!canBuzz) return;
-
-            const buzzedRef = ref(db, `rooms/${roomId}/buzzedBy`);
-            runTransaction(buzzedRef, (currentData) => {
-                if (currentData === null) {
-                    return playerId; // On prend la main
-                }
-                return; // Quelqu'un a déjà buzzé
             });
-        };
+
+            // --- 3. ACTION DU BUZZER ---
+            buzzerBtn.onclick = () => {
+                if (!canBuzz) return;
+                const buzzedRef = ref(db, `rooms/${roomId}/buzzedBy`);
+                
+                runTransaction(buzzedRef, (currentData) => {
+                    if (currentData === null) {
+                        return playerId; // On prend la main
+                    }
+                    return; // Trop tard
+                });
+            };
+
+            // Quitter la partie
+            document.getElementById('btn-quit').onclick = async () => {
+                if (confirm("Quitter la partie ?")) {
+                    await remove(playerRef);
+                    window.location.href = 'menu.html';
+                }
+            };
+        });
     </script>
 </body>
 </html>
