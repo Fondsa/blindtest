@@ -189,6 +189,13 @@
     alert("Musique ajoutée à 'Mes Imports' !");
 };
 
+        // Dans ton onValue(ref(db, `rooms/${roomId}/players`)...
+// Tu peux comparer la valeur lastSeen avec Date.now()
+// Si la différence est > 10000 (10 sec), le joueur est considéré comme "Laggy" ou Déconnecté
+const isOnline = (Date.now() - player.lastSeen) < 10000;
+const statusColor = isOnline ? 'bg-green-500' : 'bg-red-500';
+// Applique cette couleur au petit rond à côté du nom du joueur
+
         async function loadTrack(dbPath, id, fullName) {
             displayTitle.innerText = "Chargement...";
             document.getElementById('main-display').classList.add('loading-overlay-active');
