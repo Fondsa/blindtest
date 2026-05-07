@@ -8,31 +8,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
-        body { 
-            font-family: 'Fredoka', sans-serif; 
-            margin: 0; padding: 0; height: 100dvh; overflow: hidden; 
-            display: flex; flex-direction: column; background-color: #ffffff;
-            transition: background-color 0.3s ease;
-        }
+        body { font-family: 'Fredoka', sans-serif; margin: 0; padding: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; background-color: #ffffff; transition: background-color 0.3s ease; }
         .dark body { background-color: #000000; }
         #bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -1; overflow: hidden; }
         .cloud { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.6; animation: floatClouds 15s infinite alternate ease-in-out; }
         .cloud-pink { background: #ffdce0; width: 60vw; height: 60vw; top: -10%; left: -5%; }
         .cloud-blue { background: #dcf2ff; width: 70vw; height: 70vw; bottom: -15%; right: -5%; }
-        
         @keyframes floatClouds { 0% { transform: translate(0, 0); } 100% { transform: translate(5%, 5%); } }
-
         .btn-game { border-radius: 20px; color: white; font-weight: 700; border-bottom: 5px solid rgba(0,0,0,0.15); transition: 0.1s; text-transform: uppercase; font-size: 0.75rem; }
         .btn-game:active { transform: translateY(3px); border-bottom-width: 2px; }
-        
         .btn-play { background-color: #b9fbc0; color: #1a531b; }
         .btn-pause { background-color: #fef08a; color: #854d0e; }
         .btn-stop { background-color: #ff9aa2; }
         .btn-reveal { background-color: #a0c4ff; color: white !important; }
-
         .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
-        
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
     </style>
@@ -50,12 +40,11 @@
             <div id="buzz-list-content" class="space-y-2 max-h-60 overflow-y-auto custom-scroll pr-2">
                 <p class="text-center text-gray-400 italic text-xs">Aucun buzz pour le moment</p>
             </div>
-            <button id="close-modal" class="mt-6 w-full py-3 bg-rose-400 text-white font-black rounded-2xl border-b-4 border-rose-600 active:translate-y-1 active:border-b-0 transition-all uppercase">Fermer</button>
+            <button id="close-modal" class="mt-6 w-full py-3 bg-rose-400 text-white font-black rounded-2xl border-b-4 border-rose-600 active:translate-y-1 transition-all uppercase">Fermer</button>
         </div>
     </div>
 
     <main class="relative z-10 flex flex-col h-full w-full p-4 space-y-3">
-        
         <div class="flex justify-between items-center">
             <div class="bento-card px-4 py-2 text-xs font-bold dark:text-white uppercase tracking-tighter flex gap-2">
                 Room: <span id="room-id" class="text-rose-400">---</span>
@@ -83,7 +72,6 @@
                 <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📦 Musiques de Base</h3>
                 <div id="list-base" class="flex-1 overflow-y-auto space-y-2 custom-scroll"></div>
             </div>
-
             <div class="bento-card p-3 flex flex-col min-h-[45%]">
                 <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📂 Mes Imports</h3>
                 <div id="list-imported" class="flex-1 overflow-y-auto space-y-2 custom-scroll"></div>
@@ -96,7 +84,6 @@
             <button id="ctrl-stop" class="btn-game btn-stop shadow-sm">Stop</button>
             <button id="ctrl-reveal" class="btn-game btn-reveal shadow-sm">Révéler</button>
         </div>
-
     </main>
 
     <audio id="audio-player"></audio>
@@ -139,7 +126,7 @@
                         const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
                         if (trackSnap.exists()) {
                             audio.src = trackSnap.val();
-                            displayTitle.innerText = `PRÊT : ${fullName}`; // TITRE RÉTABLI ICI
+                            displayTitle.innerText = `PRÊT : ${fullName}`;
                             document.getElementById('artist-name').innerText = fullName;
                             document.getElementById('reveal-zone').classList.add('hidden');
                             
@@ -147,7 +134,6 @@
                                 state: 'ready',
                                 currentTrack: fullName,
                                 currentAudio: trackSnap.val(),
-                                buzzedBy: null,
                                 buzzHistory: null,
                                 revealed: false 
                             });
@@ -161,21 +147,22 @@
             }
         }
 
+        // --- SURVEILLANCE DES BUZZS ---
         onValue(ref(db, `rooms/${roomId}/buzzHistory`), async (snapshot) => {
             if (snapshot.exists()) {
                 audio.pause();
                 const history = snapshot.val();
                 const sortedEntries = Object.entries(history).sort((a, b) => a[1] - b[1]);
                 
+                // On récupère TOUS les joueurs d'un coup pour être sûr d'avoir les pseudos
                 const playersSnap = await get(ref(db, `rooms/${roomId}/players`));
                 const playersData = playersSnap.val() || {};
 
                 buzzListContent.innerHTML = ""; 
                 
-                for (let i = 0; i < sortedEntries.length; i++) {
-                    const uid = sortedEntries[i][0];
-                    const timestamp = sortedEntries[i][1];
-                    const pseudo = playersData[uid]?.pseudo || "Anonyme";
+                sortedEntries.forEach(([uid, timestamp], i) => {
+                    // Chemin corrigé selon ton JSON : on cherche dans l'objet playersData récupéré plus haut
+                    const pseudo = playersData[uid] ? playersData[uid].pseudo : "Anonyme";
                     
                     if (i === 0) {
                         fastestPlayerLabel.innerText = `🚨 ${pseudo} A BUZZÉ !`;
@@ -185,12 +172,14 @@
 
                     const delay = i === 0 ? "🏆 GAGNANT" : `+${((timestamp - sortedEntries[0][1]) / 1000).toFixed(2)}s`;
                     const div = document.createElement('div');
-                    div.className = `p-3 rounded-xl flex justify-between items-center bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10`;
+                    div.className = `p-3 rounded-xl flex justify-between items-center bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 mb-1`;
                     div.innerHTML = `<div class="flex items-center gap-2 text-gray-800 dark:text-white"><span class="font-black text-xs opacity-50">${i+1}.</span><span class="font-bold uppercase">${pseudo}</span></div><span class="text-[10px] font-black text-rose-500 italic">${delay}</span>`;
                     buzzListContent.appendChild(div);
-                }
+                });
             } else {
                 buzzListContent.innerHTML = `<p class="text-center text-gray-400 italic text-xs">Aucun buzz pour le moment</p>`;
+                fastestPlayerLabel.innerText = "En attente d'un buzz...";
+                buzzStatusPill.className = "bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm";
             }
         });
 
@@ -200,15 +189,11 @@
                 update(ref(db, `rooms/${roomId}`), { state: 'playing', startTime: Date.now() });
             }
         };
-        
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
-        
         document.getElementById('ctrl-stop').onclick = () => { 
             audio.pause(); 
             audio.currentTime = 0; 
-            update(ref(db, `rooms/${roomId}`), { buzzedBy: null, buzzHistory: null, revealed: false });
-            fastestPlayerLabel.innerText = "En attente d'un buzz...";
-            buzzStatusPill.className = "bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm";
+            update(ref(db, `rooms/${roomId}`), { buzzHistory: null, revealed: false, state: 'stopped' });
         };
 
         document.getElementById('ctrl-reveal').onclick = async () => {
