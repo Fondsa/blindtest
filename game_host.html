@@ -40,7 +40,6 @@
         @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 0.7; } 100% { opacity: 0.4; } }
 
         /* Style Pop-up */
-        #modal-history { transition: all 0.3s ease; }
         #modal-history.hidden { display: none; }
         #modal-history.flex { display: flex; }
     </style>
@@ -54,32 +53,34 @@
 
     <div id="modal-history" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm items-center justify-center p-6">
         <div class="bento-card bg-white/95 dark:bg-zinc-900/95 w-full max-w-sm p-6 shadow-2xl border-4 border-rose-300">
-            <h3 class="text-xl font-black text-gray-800 dark:text-white mb-4 uppercase italic">🏆 Ordre des Buzz</h3>
+            <h3 class="text-xl font-black text-gray-800 dark:text-white mb-4 uppercase italic text-center">🏆 Ordre des Buzz</h3>
             <div id="buzz-list-content" class="space-y-2 max-h-60 overflow-y-auto custom-scroll pr-2">
                 </div>
-            <button id="close-modal" class="mt-6 w-full py-3 bg-rose-400 text-white font-black rounded-2xl border-b-4 border-rose-600 active:translate-y-1 active:border-b-0 transition-all">FERMER</button>
+            <button id="close-modal" class="mt-6 w-full py-3 bg-rose-400 text-white font-black rounded-2xl border-b-4 border-rose-600 active:translate-y-1 active:border-b-0 transition-all uppercase">Fermer</button>
         </div>
     </div>
 
     <main class="relative z-10 flex flex-col h-full w-full p-4 space-y-3">
         
         <div class="flex justify-between items-center">
-            <div class="bento-card px-4 py-2 text-xs font-bold dark:text-white uppercase tracking-tighter">Room: <span id="room-id" class="text-rose-400">---</span></div>
+            <div class="bento-card px-4 py-2 text-xs font-bold dark:text-white uppercase tracking-tighter flex gap-2">
+                Room: <span id="room-id" class="text-rose-400">---</span>
+            </div>
             <button onclick="window.location.href='menu.html'" class="text-xs font-bold text-gray-400 underline">Quitter</button>
         </div>
 
-        <div class="bento-card p-4 text-center flex flex-col items-center justify-center min-h-[160px]">
+        <div class="bento-card p-6 text-center flex flex-col items-center justify-center min-h-[180px]">
             <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic px-2">Prêt à jouer ?</h2>
             
             <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
                 <p id="artist-name" class="text-rose-500 font-bold text-md uppercase italic"></p>
             </div>
 
-            <div id="buzzer-area" class="hidden mt-3 flex items-center gap-2">
-                <div class="bg-rose-100 dark:bg-rose-900/30 px-4 py-2 rounded-full border-2 border-rose-400 animate-bounce">
-                    <span class="text-rose-600 font-black text-sm uppercase">🚨 BUZZ : <span id="fastest-player">---</span></span>
+            <div id="buzzer-area" class="hidden mt-4 flex items-center justify-center gap-3">
+                <div class="bg-rose-100 dark:bg-rose-900/40 px-6 py-2 rounded-full border-2 border-rose-400 animate-bounce shadow-lg">
+                    <span class="text-rose-600 dark:text-rose-300 font-black text-sm uppercase italic">🚨 <span id="fastest-player">---</span> a buzzé !</span>
                 </div>
-                <button id="open-history" class="w-10 h-10 bg-white/80 dark:bg-zinc-800 rounded-full flex items-center justify-center shadow-md border border-rose-200 text-lg">📜</button>
+                <button id="open-history" class="w-12 h-12 bg-white dark:bg-zinc-800 rounded-full flex items-center justify-center shadow-md border-2 border-rose-200 hover:scale-110 transition-transform text-xl">📜</button>
             </div>
         </div>
 
@@ -87,23 +88,23 @@
             <div class="bento-card p-3 flex flex-col min-h-[45%]">
                 <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📦 Musiques de Base</h3>
                 <div id="list-base" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
-                    <p class="text-[10px] text-rose-400 animate-pulse italic text-center mt-2">Chargement des sons...</p>
+                    <p class="text-[10px] text-rose-400 animate-pulse italic text-center mt-2">Chargement...</p>
                 </div>
             </div>
 
             <div class="bento-card p-3 flex flex-col min-h-[45%]">
                 <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📂 Mes Imports</h3>
                 <div id="list-imported" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
-                    <p class="text-[10px] text-rose-400 animate-pulse italic text-center mt-2">Chargement des sons...</p>
+                    <p class="text-[10px] text-rose-400 animate-pulse italic text-center mt-2">Chargement...</p>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-4 gap-2 h-16">
-            <button id="ctrl-play" class="btn-game btn-play">Play</button>
-            <button id="ctrl-pause" class="btn-game btn-pause">Pause</button>
-            <button id="ctrl-stop" class="btn-game btn-stop">Stop</button>
-            <button id="ctrl-reveal" class="btn-game btn-reveal">Révéler</button>
+            <button id="ctrl-play" class="btn-game btn-play shadow-sm">Play</button>
+            <button id="ctrl-pause" class="btn-game btn-pause shadow-sm">Pause</button>
+            <button id="ctrl-stop" class="btn-game btn-stop shadow-sm">Stop</button>
+            <button id="ctrl-reveal" class="btn-game btn-reveal shadow-sm">Révéler</button>
         </div>
 
     </main>
@@ -151,10 +152,12 @@
                             
                             if (trackSnap.exists()) {
                                 audio.src = trackSnap.val();
-                                displayTitle.innerText = `Morceau chargé : ${fullName}`;
+                                displayTitle.innerText = `PRÊT : ${fullName}`;
                                 displayTitle.classList.remove('loading-pulse');
                                 document.getElementById('artist-name').innerText = fullName;
                                 document.getElementById('reveal-zone').classList.add('hidden');
+                                
+                                // CACHER LE BUZZ QUAND ON LANCE UNE MUSIQUE
                                 buzzerArea.classList.add('hidden');
 
                                 await update(ref(db, `rooms/${roomId}`), { 
@@ -163,7 +166,7 @@
                                     currentAudio: trackSnap.val(),
                                     startTime: Date.now(),
                                     buzzedBy: null,
-                                    buzzHistory: null // On vide l'historique pour le nouveau morceau
+                                    buzzHistory: null // CRITIQUE : Reset l'historique ici
                                 });
                                 audio.play(); 
                             }
@@ -172,37 +175,40 @@
                     container.appendChild(item);
                 });
             } else {
-                container.innerHTML = `<p class="text-[10px] text-gray-400 italic text-center mt-2">Aucun titre trouvé</p>`;
+                container.innerHTML = `<p class="text-[10px] text-gray-400 italic text-center mt-2">Aucun titre</p>`;
             }
         }
 
-        // SURVEILLANCE DES BUZZS ET HISTORIQUE (GAME_HOST)
+        // --- SURVEILLANCE DES BUZZS ET HISTORIQUE ---
         onValue(ref(db, `rooms/${roomId}/buzzHistory`), async (snapshot) => {
             if (snapshot.exists()) {
-                audio.pause(); // Stop automatique de la musique
+                audio.pause(); // Stop automatique sur buzz
                 const history = snapshot.val();
                 
-                // Trier par timestamp (le plus petit = le plus rapide)
-                const sortedIds = Object.entries(history).sort((a, b) => a[1] - b[1]);
+                // Trier par timestamp (plus petit = premier)
+                const sortedEntries = Object.entries(history).sort((a, b) => a[1] - b[1]);
                 
                 buzzListContent.innerHTML = ""; // Vider le pop-up
                 
-                for (let i = 0; i < sortedIds.length; i++) {
-                    const uid = sortedIds[i][0];
+                for (let i = 0; i < sortedEntries.length; i++) {
+                    const uid = sortedEntries[i][0];
+                    const timestamp = sortedEntries[i][1];
                     
-                    // On cherche le pseudo directement dans la room pour être cohérent et fiable
+                    // Récupérer le pseudo directement dans la room
                     const playerSnap = await get(ref(db, `rooms/${roomId}/players/${uid}/pseudo`));
                     const pseudo = playerSnap.exists() ? playerSnap.val() : "Anonyme";
                     
                     if (i === 0) {
+                        // On affiche le premier sur l'interface principale
                         fastestPlayerName.innerText = pseudo;
-                        buzzerArea.classList.remove('hidden'); // On affiche la bulle et le bouton 📜
+                        buzzerArea.classList.remove('hidden'); // ON MONTRE LA ZONE ICI
                         displayTitle.innerText = "🚨 BUZZ DÉTECTÉ !";
                     }
 
-                    // Calcul de l'écart
-                    const timing = i === 0 ? '🏆 GAGNANT' : `+${((sortedIds[i][1] - sortedIds[0][1]) / 1000).toFixed(2)}s`;
+                    // Calcul du délai par rapport au premier
+                    const delay = i === 0 ? "🏆 GAGNANT" : `+${((timestamp - sortedEntries[0][1]) / 1000).toFixed(2)}s`;
 
+                    // Ajout dans le pop-up
                     const div = document.createElement('div');
                     div.className = `p-3 rounded-xl flex justify-between items-center ${i === 0 ? 'bg-rose-100 dark:bg-rose-500/20 border-2 border-rose-400' : 'bg-gray-100 dark:bg-white/5'}`;
                     div.innerHTML = `
@@ -210,26 +216,33 @@
                             <span class="font-black dark:text-white text-xs">${i + 1}.</span>
                             <span class="font-bold dark:text-white uppercase">${pseudo}</span>
                         </div>
-                        <span class="text-[10px] font-black text-rose-500 italic">${timing}</span>
+                        <span class="text-[10px] font-black text-rose-500 italic">${delay}</span>
                     `;
                     buzzListContent.appendChild(div);
                 }
             } else {
-                buzzerArea.classList.add('hidden'); // Cache la zone s'il n'y a pas de buzz
+                // Si pas de buzzHistory (nouveau morceau), on cache la zone
+                buzzerArea.classList.add('hidden');
+                if (displayTitle.innerText === "🚨 BUZZ DÉTECTÉ !") {
+                    displayTitle.innerText = "Prêt à jouer ?";
+                }
             }
         });
 
-        // POP-UP ACTIONS
-        document.getElementById('open-history').onclick = () => document.getElementById('modal-history').classList.replace('hidden', 'flex');
-        document.getElementById('close-modal').onclick = () => document.getElementById('modal-history').classList.replace('flex', 'hidden');
+        // ACTIONS DU MODAL
+        document.getElementById('open-history').onclick = () => {
+            document.getElementById('modal-history').classList.replace('hidden', 'flex');
+        };
+        document.getElementById('close-modal').onclick = () => {
+            document.getElementById('modal-history').classList.replace('flex', 'hidden');
+        };
 
-        // RÉGIE CONTROLES
+        // COMMANDES RÉGIE
         document.getElementById('ctrl-play').onclick = () => audio.play();
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
         document.getElementById('ctrl-stop').onclick = () => { 
             audio.pause(); 
             audio.currentTime = 0; 
-            // Reset des buzzs en base de données pour pouvoir relancer
             update(ref(db, `rooms/${roomId}`), { buzzedBy: null, buzzHistory: null });
         };
         document.getElementById('ctrl-reveal').onclick = () => document.getElementById('reveal-zone').classList.toggle('hidden');
