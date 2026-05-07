@@ -25,6 +25,8 @@
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        .loading-pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
@@ -37,9 +39,7 @@
     <div id="modal-history" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm items-center justify-center p-6">
         <div class="bento-card bg-white/95 dark:bg-zinc-900/95 w-full max-w-sm p-6 shadow-2xl border-4 border-rose-300">
             <h3 class="text-xl font-black text-gray-800 dark:text-white mb-4 uppercase italic text-center">🏆 Ordre des Buzz</h3>
-            <div id="buzz-list-content" class="space-y-2 max-h-60 overflow-y-auto custom-scroll pr-2">
-                <p class="text-center text-gray-400 italic text-xs">Aucun buzz pour le moment</p>
-            </div>
+            <div id="buzz-list-content" class="space-y-2 max-h-60 overflow-y-auto custom-scroll pr-2"></div>
             <button id="close-modal" class="mt-6 w-full py-3 bg-rose-400 text-white font-black rounded-2xl border-b-4 border-rose-600 active:translate-y-1 transition-all uppercase">Fermer</button>
         </div>
     </div>
@@ -105,8 +105,14 @@
         
         document.getElementById('room-id').innerText = roomId;
 
+        let playersCache = {};
+
         onAuthStateChanged(auth, (user) => {
             if (!user) return;
+            // On surveille les joueurs en continu pour avoir les pseudos à jour
+            onValue(ref(db, `rooms/${roomId}/players`), snap => {
+                playersCache = snap.val() || {};
+            });
             onValue(ref(db, 'musics/base'), snap => renderList(snap, 'list-base', 'musics/base'));
             onValue(ref(db, `musics/users/${user.uid}`), snap => renderList(snap, 'list-imported', `musics/users/${user.uid}`));
         });
@@ -122,24 +128,32 @@
                     item.innerText = fullName;
                     
                     item.onclick = async () => {
+                        // EFFET DE CHARGEMENT VISUEL
                         displayTitle.innerText = "Chargement...";
-                        const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
-                        if (trackSnap.exists()) {
-                            audio.src = trackSnap.val();
-                            displayTitle.innerText = `PRÊT : ${fullName}`;
-                            document.getElementById('artist-name').innerText = fullName;
-                            document.getElementById('reveal-zone').classList.add('hidden');
-                            
-                            await update(ref(db, `rooms/${roomId}`), { 
-                                state: 'ready',
-                                currentTrack: fullName,
-                                currentAudio: trackSnap.val(),
-                                buzzHistory: null,
-                                revealed: false 
-                            });
-
-                            fastestPlayerLabel.innerText = "En attente d'un buzz...";
-                            buzzStatusPill.className = "bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm";
+                        displayTitle.classList.add('loading-pulse');
+                        
+                        try {
+                            const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
+                            if (trackSnap.exists()) {
+                                audio.src = trackSnap.val();
+                                audio.oncanplaythrough = async () => {
+                                    displayTitle.classList.remove('loading-pulse');
+                                    displayTitle.innerText = `PRÊT : ${fullName}`;
+                                    document.getElementById('artist-name').innerText = fullName;
+                                    document.getElementById('reveal-zone').classList.add('hidden');
+                                    
+                                    await update(ref(db, `rooms/${roomId}`), { 
+                                        state: 'ready',
+                                        currentTrack: fullName,
+                                        currentAudio: trackSnap.val(),
+                                        buzzHistory: null,
+                                        revealed: false 
+                                    });
+                                };
+                            }
+                        } catch (e) {
+                            displayTitle.innerText = "Erreur de chargement";
+                            displayTitle.classList.remove('loading-pulse');
                         }
                     };
                     container.appendChild(item);
@@ -147,22 +161,17 @@
             }
         }
 
-        // --- SURVEILLANCE DES BUZZS ---
-        onValue(ref(db, `rooms/${roomId}/buzzHistory`), async (snapshot) => {
+        // SURVEILLANCE DES BUZZS CORRIGÉE
+        onValue(ref(db, `rooms/${roomId}/buzzHistory`), (snapshot) => {
             if (snapshot.exists()) {
                 audio.pause();
                 const history = snapshot.val();
                 const sortedEntries = Object.entries(history).sort((a, b) => a[1] - b[1]);
                 
-                // On récupère TOUS les joueurs d'un coup pour être sûr d'avoir les pseudos
-                const playersSnap = await get(ref(db, `rooms/${roomId}/players`));
-                const playersData = playersSnap.val() || {};
-
                 buzzListContent.innerHTML = ""; 
                 
                 sortedEntries.forEach(([uid, timestamp], i) => {
-                    // Chemin corrigé selon ton JSON : on cherche dans l'objet playersData récupéré plus haut
-                    const pseudo = playersData[uid] ? playersData[uid].pseudo : "Anonyme";
+                    const pseudo = playersCache[uid] ? playersCache[uid].pseudo : "Anonyme";
                     
                     if (i === 0) {
                         fastestPlayerLabel.innerText = `🚨 ${pseudo} A BUZZÉ !`;
@@ -186,10 +195,12 @@
         document.getElementById('ctrl-play').onclick = () => {
             if (audio.src) {
                 audio.play();
-                update(ref(db, `rooms/${roomId}`), { state: 'playing', startTime: Date.now() });
+                update(ref(db, `rooms/${roomId}`), { state: 'playing', startTime: Date.now(), buzzHistory: null });
             }
         };
+
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
+
         document.getElementById('ctrl-stop').onclick = () => { 
             audio.pause(); 
             audio.currentTime = 0; 
