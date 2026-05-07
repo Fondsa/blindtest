@@ -28,7 +28,7 @@
         .btn-play { background-color: #b9fbc0; color: #1a531b; }
         .btn-pause { background-color: #fef08a; color: #854d0e; }
         .btn-stop { background-color: #ff9aa2; }
-        .btn-reveal { background-color: #a0c4ff; color: #1e3a8a; }
+        .btn-reveal { background-color: #a0c4ff; color: white !important; } /* Texte forcé en blanc */
 
         .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
@@ -50,7 +50,7 @@
             <div id="buzz-list-content" class="space-y-2 max-h-60 overflow-y-auto custom-scroll pr-2">
                 <p class="text-center text-gray-400 italic text-xs">Aucun buzz pour le moment</p>
             </div>
-            <button id="close-modal" class="mt-6 w-full py-3 bg-rose-400 text-white font-black rounded-2xl border-b-4 border-rose-600 active:translate-y-1 active:border-b-0 transition-all uppercase">Fermer</button>
+            <button id="close-modal" class="mt-6 w-full py-3 bg-rose-400 text-white font-black rounded-2xl border-b-4 border-rose-600 active:translate-y-1 transition-all uppercase">Fermer</button>
         </div>
     </div>
 
@@ -64,15 +64,15 @@
         </div>
 
         <div class="bento-card p-6 text-center flex flex-col items-center justify-center min-h-[220px]">
-            <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic px-2">Prêt à jouer ?</h2>
+            <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic px-2">Choisis une musique</h2>
             
-            <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
-                <p id="artist-name" class="text-rose-500 font-bold text-md uppercase italic"></p>
+            <div id="reveal-zone" class="hidden mt-2 p-3 bg-rose-50 dark:bg-white/10 rounded-xl border-2 border-rose-200">
+                <p id="artist-name" class="text-rose-500 font-black text-sm uppercase italic"></p>
             </div>
 
             <div id="buzzer-area" class="mt-6 flex items-center justify-center gap-3">
                 <div id="buzz-status-pill" class="bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300">
-                    <span id="fastest-player-label" class="text-gray-400 dark:text-gray-500 font-black text-sm uppercase italic">En attente d'un buzz...</span>
+                    <span id="fastest-player-label" class="text-gray-400 dark:text-gray-500 font-black text-sm uppercase italic tracking-tighter">En attente d'un buzz...</span>
                 </div>
                 <button id="open-history" class="w-12 h-12 bg-white dark:bg-zinc-800 rounded-full flex items-center justify-center shadow-md border-2 border-rose-200 hover:scale-110 transition-transform text-xl">📜</button>
             </div>
@@ -91,10 +91,10 @@
         </div>
 
         <div class="grid grid-cols-4 gap-2 h-16">
-            <button id="ctrl-play" class="btn-game btn-play shadow-sm">Play</button>
-            <button id="ctrl-pause" class="btn-game btn-pause shadow-sm">Pause</button>
-            <button id="ctrl-stop" class="btn-game btn-stop shadow-sm">Stop</button>
-            <button id="ctrl-reveal" class="btn-game btn-reveal shadow-sm">Révéler</button>
+            <button id="ctrl-play" class="btn-game btn-play">Play</button>
+            <button id="ctrl-pause" class="btn-game btn-pause">Pause</button>
+            <button id="ctrl-stop" class="btn-game btn-stop">Stop</button>
+            <button id="ctrl-reveal" class="btn-game btn-reveal">Révéler</button>
         </div>
 
     </main>
@@ -103,7 +103,7 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
@@ -139,18 +139,18 @@
                         const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
                         if (trackSnap.exists()) {
                             audio.src = trackSnap.val();
-                            displayTitle.innerText = `PRÊT : ${fullName}`;
+                            displayTitle.innerText = "PRÊT !"; // On ne révèle pas le titre à l'hôte ici
                             document.getElementById('artist-name').innerText = fullName;
                             document.getElementById('reveal-zone').classList.add('hidden');
                             
-                            // Reset complet de la room pour la nouvelle musique
+                            // Reset de la room pour les joueurs
                             await update(ref(db, `rooms/${roomId}`), { 
                                 state: 'ready',
                                 currentTrack: fullName,
                                 currentAudio: trackSnap.val(),
                                 buzzedBy: null,
                                 buzzHistory: null,
-                                revealed: false // Crucial pour cacher la réponse chez le joueur
+                                revealed: false 
                             });
 
                             fastestPlayerLabel.innerText = "En attente d'un buzz...";
@@ -162,39 +162,35 @@
             }
         }
 
-        // --- SURVEILLANCE DES BUZZS ---
+        // --- GESTION DES BUZZS ET AFFICHAGE DES PSEUDOS ---
         onValue(ref(db, `rooms/${roomId}/buzzHistory`), async (snapshot) => {
             if (snapshot.exists()) {
                 audio.pause();
                 const history = snapshot.val();
+                // Trier par timestamp pour avoir le plus rapide en premier
                 const sortedEntries = Object.entries(history).sort((a, b) => a[1] - b[1]);
                 
+                // On récupère d'un coup tous les pseudos de la room pour éviter les appels en boucle
+                const playersSnap = await get(ref(db, `rooms/${roomId}/players`));
+                const playersData = playersSnap.exists() ? playersSnap.val() : {};
+
                 buzzListContent.innerHTML = ""; 
                 
-                for (let i = 0; i < sortedEntries.length; i++) {
-                    const uid = sortedEntries[i][0];
-                    const timestamp = sortedEntries[i][1];
-                    const playerSnap = await get(ref(db, `rooms/${roomId}/players/${uid}/pseudo`));
-                    const pseudo = playerSnap.exists() ? playerSnap.val() : "Anonyme";
+                sortedEntries.forEach(([uid, timestamp], i) => {
+                    const pseudo = playersData[uid]?.pseudo || "Anonyme";
                     
                     if (i === 0) {
-                        fastestPlayerLabel.innerText = `🚨 ${pseudo} A BUZZÉ !`;
+                        fastestPlayerLabel.innerText = `🚨 ${pseudo} !`;
                         buzzStatusPill.className = "bg-rose-100 dark:bg-rose-900/40 px-6 py-2 rounded-full border-2 border-rose-400 animate-bounce shadow-lg";
-                        displayTitle.innerText = "BUZZ DÉTECTÉ !";
+                        displayTitle.innerText = "BUZZ !";
                     }
 
-                    const delay = i === 0 ? "🏆 GAGNANT" : `+${((timestamp - sortedEntries[0][1]) / 1000).toFixed(2)}s`;
+                    const delay = i === 0 ? "🏆 PREMIER" : `+${((timestamp - sortedEntries[0][1]) / 1000).toFixed(2)}s`;
                     const div = document.createElement('div');
-                    div.className = `p-3 rounded-xl flex justify-between items-center bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10`;
-                    div.innerHTML = `
-                        <div class="flex items-center gap-2 text-gray-800 dark:text-white">
-                            <span class="font-black text-xs opacity-50">${i + 1}.</span>
-                            <span class="font-bold uppercase">${pseudo}</span>
-                        </div>
-                        <span class="text-[10px] font-black text-rose-500 italic">${delay}</span>
-                    `;
+                    div.className = `p-3 rounded-xl flex justify-between items-center bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5`;
+                    div.innerHTML = `<span class="font-bold dark:text-white uppercase text-xs">${i+1}. ${pseudo}</span><span class="text-rose-500 font-black text-[10px] italic">${delay}</span>`;
                     buzzListContent.appendChild(div);
-                }
+                });
             } else {
                 buzzListContent.innerHTML = `<p class="text-center text-gray-400 italic text-xs">Aucun buzz pour le moment</p>`;
             }
@@ -218,13 +214,14 @@
             buzzStatusPill.className = "bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm";
         };
 
-        // RÉVÉLER : Synchronise l'affichage chez le Joueur
+        // RÉVÉLER (Envoi vers le joueur et affichage local discret)
         document.getElementById('ctrl-reveal').onclick = async () => {
-            const isHidden = document.getElementById('reveal-zone').classList.toggle('hidden');
-            await update(ref(db, `rooms/${roomId}`), { revealed: !isHidden });
+            const zone = document.getElementById('reveal-zone');
+            const isNowHidden = zone.classList.toggle('hidden');
+            await update(ref(db, `rooms/${roomId}`), { revealed: !isNowHidden });
         };
 
-        // MODAL
+        // MODAL HISTORIQUE
         document.getElementById('open-history').onclick = () => document.getElementById('modal-history').classList.remove('hidden');
         document.getElementById('close-modal').onclick = () => document.getElementById('modal-history').classList.add('hidden');
 
