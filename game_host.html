@@ -28,16 +28,13 @@
         .btn-play { background-color: #b9fbc0; color: #1a531b; }
         .btn-pause { background-color: #fef08a; color: #854d0e; }
         .btn-stop { background-color: #ff9aa2; }
-        .btn-reveal { background-color: #a0c4ff; }
+        .btn-reveal { background-color: #a0c4ff; color: #1e3a8a; }
 
         .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
         
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-
-        .loading-pulse { animation: pulse 1.5s infinite; opacity: 0.5; }
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 0.7; } 100% { opacity: 0.4; } }
     </style>
 </head>
 <body>
@@ -106,7 +103,7 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
@@ -141,23 +138,23 @@
                         displayTitle.innerText = "Chargement...";
                         const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
                         if (trackSnap.exists()) {
-                            // CHARGEMENT UNIQUEMENT (Pas de play automatique)
                             audio.src = trackSnap.val();
                             displayTitle.innerText = `PRÊT : ${fullName}`;
                             document.getElementById('artist-name').innerText = fullName;
                             document.getElementById('reveal-zone').classList.add('hidden');
                             
-                            // Reset visuel du buzz
-                            fastestPlayerLabel.innerText = "En attente d'un buzz...";
-                            buzzStatusPill.className = "bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm";
-                            
+                            // Reset complet de la room pour la nouvelle musique
                             await update(ref(db, `rooms/${roomId}`), { 
-                                state: 'ready', // On change l'état en 'ready' au lieu de 'playing'
+                                state: 'ready',
                                 currentTrack: fullName,
                                 currentAudio: trackSnap.val(),
                                 buzzedBy: null,
-                                buzzHistory: null
+                                buzzHistory: null,
+                                revealed: false // Crucial pour cacher la réponse chez le joueur
                             });
+
+                            fastestPlayerLabel.innerText = "En attente d'un buzz...";
+                            buzzStatusPill.className = "bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm";
                         }
                     };
                     container.appendChild(item);
@@ -181,7 +178,6 @@
                     const pseudo = playerSnap.exists() ? playerSnap.val() : "Anonyme";
                     
                     if (i === 0) {
-                        // Mise à jour de la pilule visuelle
                         fastestPlayerLabel.innerText = `🚨 ${pseudo} A BUZZÉ !`;
                         buzzStatusPill.className = "bg-rose-100 dark:bg-rose-900/40 px-6 py-2 rounded-full border-2 border-rose-400 animate-bounce shadow-lg";
                         displayTitle.innerText = "BUZZ DÉTECTÉ !";
@@ -189,18 +185,17 @@
 
                     const delay = i === 0 ? "🏆 GAGNANT" : `+${((timestamp - sortedEntries[0][1]) / 1000).toFixed(2)}s`;
                     const div = document.createElement('div');
-                    div.className = `p-3 rounded-xl flex justify-between items-center ${i === 0 ? 'bg-rose-100 dark:bg-rose-500/20 border-2 border-rose-400' : 'bg-gray-100 dark:bg-white/5'}`;
+                    div.className = `p-3 rounded-xl flex justify-between items-center bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10`;
                     div.innerHTML = `
-                        <div class="flex items-center gap-2">
-                            <span class="font-black dark:text-white text-xs">${i + 1}.</span>
-                            <span class="font-bold dark:text-white uppercase">${pseudo}</span>
+                        <div class="flex items-center gap-2 text-gray-800 dark:text-white">
+                            <span class="font-black text-xs opacity-50">${i + 1}.</span>
+                            <span class="font-bold uppercase">${pseudo}</span>
                         </div>
                         <span class="text-[10px] font-black text-rose-500 italic">${delay}</span>
                     `;
                     buzzListContent.appendChild(div);
                 }
             } else {
-                // État par défaut quand pas de buzz
                 buzzListContent.innerHTML = `<p class="text-center text-gray-400 italic text-xs">Aucun buzz pour le moment</p>`;
             }
         });
@@ -218,12 +213,16 @@
         document.getElementById('ctrl-stop').onclick = () => { 
             audio.pause(); 
             audio.currentTime = 0; 
-            update(ref(db, `rooms/${roomId}`), { buzzedBy: null, buzzHistory: null });
+            update(ref(db, `rooms/${roomId}`), { buzzedBy: null, buzzHistory: null, revealed: false });
             fastestPlayerLabel.innerText = "En attente d'un buzz...";
             buzzStatusPill.className = "bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm";
         };
 
-        document.getElementById('ctrl-reveal').onclick = () => document.getElementById('reveal-zone').classList.toggle('hidden');
+        // RÉVÉLER : Synchronise l'affichage chez le Joueur
+        document.getElementById('ctrl-reveal').onclick = async () => {
+            const isHidden = document.getElementById('reveal-zone').classList.toggle('hidden');
+            await update(ref(db, `rooms/${roomId}`), { revealed: !isHidden });
+        };
 
         // MODAL
         document.getElementById('open-history').onclick = () => document.getElementById('modal-history').classList.remove('hidden');
