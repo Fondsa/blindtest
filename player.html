@@ -134,6 +134,13 @@ onAuthStateChanged(auth, async (user) => {
 
     // ... reste du code ...
 });
+
+        // Calcul du Ping
+const startTime = Date.now();
+const pingRef = ref(db, `rooms/${roomId}/players/${auth.currentUser.uid}/lastSeen`);
+setInterval(() => {
+    set(pingRef, serverTimestamp());
+}, 5000); // On prévient le serveur qu'on est en ligne toutes les 5 secondes
         
         onAuthStateChanged(auth, (user) => {
             if (!user || !roomId) { window.location.href = 'menu.html'; return; }
