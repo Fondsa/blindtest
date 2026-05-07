@@ -110,6 +110,30 @@
         const statusText = document.getElementById('status-text');
         const revealZone = document.getElementById('reveal-zone');
         const revealedAnswer = document.getElementById('revealed-answer');
+
+        // --- SAUVEGARDE DE LA SESSION ---
+if (roomId) {
+    localStorage.setItem('lastRoom', roomId);
+}
+
+// Récupérer le pseudo sauvegardé pour éviter de repasser par l'index
+const savedPseudo = localStorage.getItem('playerPseudo');
+
+// --- LOGIQUE DE RECONNEXION ---
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // Si on arrive sur player.html sans roomId mais qu'on en a un en mémoire
+    if (!roomId && localStorage.getItem('lastRoom')) {
+        window.location.href = `player.html?room=${localStorage.getItem('lastRoom')}`;
+        return;
+    }
+
+    // ... reste du code ...
+});
         
         onAuthStateChanged(auth, (user) => {
             if (!user || !roomId) { window.location.href = 'menu.html'; return; }
