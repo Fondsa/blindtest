@@ -26,7 +26,6 @@
         .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
         
-        /* Squelette de chargement pour les listes vides */
         .skeleton { background: linear-gradient(90deg, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.05) 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; border-radius: 12px; height: 40px; margin-bottom: 8px; }
         @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
@@ -59,8 +58,8 @@
         <div id="main-display" class="bento-card p-6 text-center flex flex-col items-center justify-center min-h-[220px]">
             <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic px-2">Préparation...</h2>
             
-            <div id="reveal-zone" class="hidden mt-2 p-2 bg-rose-50 dark:bg-rose-900/20 rounded-xl">
-                <p id="artist-name" class="text-rose-500 font-bold text-md uppercase italic"></p>
+            <div id="reveal-zone" class="hidden mt-2 p-2">
+                <p class="text-gray-400 text-xs font-bold uppercase italic">Réponse envoyée aux joueurs</p>
             </div>
 
             <div id="buzzer-area" class="mt-6 flex items-center justify-center gap-3">
@@ -98,7 +97,7 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, onValue, update, get, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
@@ -113,23 +112,19 @@
 
         onAuthStateChanged(auth, (user) => {
             if (!user) return;
-            displayTitle.innerText = "Prêt à jouer ?";
+            displayTitle.innerText = "Sélectionnez un son";
             
-            // 1. Charger les pseudos
             onValue(ref(db, `rooms/${roomId}/players`), snap => {
                 playersCache = snap.val() || {};
             });
 
-            // 2. Charger les listes
             onValue(ref(db, 'musics/base'), snap => renderList(snap, 'list-base', 'musics/base'));
             onValue(ref(db, `musics/users/${user.uid}`), snap => renderList(snap, 'list-imported', `musics/users/${user.uid}`));
 
-            // 3. Ecouter les buzz de manière forcée (child_added est plus réactif)
             const buzzRef = ref(db, `rooms/${roomId}/buzzHistory`);
             onValue(buzzRef, (snapshot) => {
                 if (snapshot.exists()) {
-                    const buzzes = snapshot.val();
-                    handleBuzzEvent(buzzes);
+                    handleBuzzEvent(snapshot.val());
                 } else {
                     resetBuzzDisplay();
                 }
@@ -138,7 +133,7 @@
 
         function renderList(snapshot, elementId, dbPath) {
             const container = document.getElementById(elementId);
-            container.innerHTML = ""; // Enlève les squelettes
+            container.innerHTML = "";
             if (snapshot.exists()) {
                 Object.entries(snapshot.val()).forEach(([id, track]) => {
                     const item = document.createElement('div');
@@ -163,7 +158,6 @@
                 audio.oncanplaythrough = async () => {
                     displayTitle.innerText = `PRÊT : ${fullName}`;
                     document.getElementById('main-display').classList.remove('loading-overlay-active');
-                    document.getElementById('artist-name').innerText = fullName;
                     document.getElementById('reveal-zone').classList.add('hidden');
                     
                     await update(ref(db, `rooms/${roomId}`), { 
@@ -178,20 +172,20 @@
         }
 
         function handleBuzzEvent(buzzes) {
-            audio.pause();
+            // Le premier buzz coupe le son pour tout le monde
+            audio.pause(); 
+            
             const sorted = Object.entries(buzzes).sort((a,b) => a[1] - b[1]);
             const [winnerId] = sorted[0];
             const pseudo = playersCache[winnerId] ? playersCache[winnerId].pseudo : "Inconnu";
 
             document.getElementById('fastest-player-label').innerText = `🚨 ${pseudo} A BUZZÉ !`;
             document.getElementById('buzz-status-pill').className = "bg-rose-100 dark:bg-rose-900/60 px-6 py-2 rounded-full border-2 border-rose-400 animate-bounce shadow-lg";
-            displayTitle.innerText = "BUZZ DÉTECTÉ !";
 
-            // Remplir la modale
             const historyList = document.getElementById('buzz-list-content');
             historyList.innerHTML = sorted.map(([uid, time], i) => {
                 const p = playersCache[uid] ? playersCache[uid].pseudo : "Inconnu";
-                const delay = i === 0 ? "Gagnant" : `+${((time - sorted[0][1])/1000).toFixed(2)}s`;
+                const delay = i === 0 ? "1er" : `+${((time - sorted[0][1])/1000).toFixed(2)}s`;
                 return `<div class="p-2 bg-white/10 rounded-lg flex justify-between text-sm"><b>${p}</b> <i>${delay}</i></div>`;
             }).join('');
         }
@@ -207,13 +201,39 @@
                 update(ref(db, `rooms/${roomId}`), { state: 'playing', startTime: Date.now() });
             }
         };
-        document.getElementById('ctrl-stop').onclick = () => {
-            audio.pause(); audio.currentTime = 0;
-            remove(ref(db, `rooms/${roomId}/buzzHistory`));
-            update(ref(db, `rooms/${roomId}`), { state: 'stopped', revealed: false });
-        };
+
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
-        document.getElementById('ctrl-reveal').onclick = () => document.getElementById('reveal-zone').classList.toggle('hidden');
+
+        document.getElementById('ctrl-stop').onclick = async () => {
+            audio.pause(); audio.currentTime = 0;
+            await update(ref(db, `rooms/${roomId}`), { 
+                state: 'stopped', 
+                revealed: false,
+                buzzHistory: null 
+            });
+        };
+
+        // LE BOUTON RÉVÉLER : Envoie le signal aux joueurs et verrouille
+        document.getElementById('ctrl-reveal').onclick = async () => {
+            const roomRef = ref(db, `rooms/${roomId}`);
+            const snap = await get(roomRef);
+            const isCurrentlyRevealed = snap.val()?.revealed || false;
+
+            await update(roomRef, { 
+                revealed: !isCurrentlyRevealed,
+                state: isCurrentlyRevealed ? 'playing' : 'revealed' // Bloque le buzzer si on révèle
+            });
+
+            // Feedback visuel sur la régie
+            if (!isCurrentlyRevealed) {
+                document.getElementById('reveal-zone').classList.remove('hidden');
+                displayTitle.innerText = "RÉPONSE RÉVÉLÉE";
+            } else {
+                document.getElementById('reveal-zone').classList.add('hidden');
+                displayTitle.innerText = "RETOUR AU JEU";
+            }
+        };
+
         document.getElementById('open-history').onclick = () => document.getElementById('modal-history').classList.remove('hidden');
         document.getElementById('close-modal').onclick = () => document.getElementById('modal-history').classList.add('hidden');
     </script>
