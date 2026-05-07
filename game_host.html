@@ -25,8 +25,11 @@
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-        .loading-pulse { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        /* Animation de chargement sur les listes */
+        .loading-active { pointer-events: none; opacity: 0.5; cursor: wait; }
+        .pulse-text { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
@@ -67,7 +70,7 @@
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col min-h-0 space-y-3">
+        <div id="music-lists-container" class="flex-1 flex flex-col min-h-0 space-y-3">
             <div class="bento-card p-3 flex flex-col min-h-[45%]">
                 <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📦 Musiques de Base</h3>
                 <div id="list-base" class="flex-1 overflow-y-auto space-y-2 custom-scroll"></div>
@@ -90,7 +93,7 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         if(localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
@@ -99,6 +102,7 @@
         const roomId = urlParams.get('room');
         const audio = document.getElementById('audio-player');
         const displayTitle = document.getElementById('display-title');
+        const listsContainer = document.getElementById('music-lists-container');
         const buzzStatusPill = document.getElementById('buzz-status-pill');
         const fastestPlayerLabel = document.getElementById('fastest-player-label');
         const buzzListContent = document.getElementById('buzz-list-content');
@@ -109,10 +113,9 @@
 
         onAuthStateChanged(auth, (user) => {
             if (!user) return;
-            // On surveille les joueurs en continu pour avoir les pseudos à jour
-            onValue(ref(db, `rooms/${roomId}/players`), snap => {
-                playersCache = snap.val() || {};
-            });
+            // Surveillance des joueurs pour les pseudos
+            onValue(ref(db, `rooms/${roomId}/players`), snap => { playersCache = snap.val() || {}; });
+            
             onValue(ref(db, 'musics/base'), snap => renderList(snap, 'list-base', 'musics/base'));
             onValue(ref(db, `musics/users/${user.uid}`), snap => renderList(snap, 'list-imported', `musics/users/${user.uid}`));
         });
@@ -128,16 +131,19 @@
                     item.innerText = fullName;
                     
                     item.onclick = async () => {
-                        // EFFET DE CHARGEMENT VISUEL
+                        // DEBUT CHARGEMENT
                         displayTitle.innerText = "Chargement...";
-                        displayTitle.classList.add('loading-pulse');
-                        
+                        displayTitle.classList.add('pulse-text');
+                        listsContainer.classList.add('loading-active');
+
                         try {
                             const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
                             if (trackSnap.exists()) {
                                 audio.src = trackSnap.val();
                                 audio.oncanplaythrough = async () => {
-                                    displayTitle.classList.remove('loading-pulse');
+                                    // FIN CHARGEMENT
+                                    displayTitle.classList.remove('pulse-text');
+                                    listsContainer.classList.remove('loading-active');
                                     displayTitle.innerText = `PRÊT : ${fullName}`;
                                     document.getElementById('artist-name').innerText = fullName;
                                     document.getElementById('reveal-zone').classList.add('hidden');
@@ -152,8 +158,8 @@
                                 };
                             }
                         } catch (e) {
-                            displayTitle.innerText = "Erreur de chargement";
-                            displayTitle.classList.remove('loading-pulse');
+                            displayTitle.innerText = "Erreur !";
+                            listsContainer.classList.remove('loading-active');
                         }
                     };
                     container.appendChild(item);
@@ -161,24 +167,21 @@
             }
         }
 
-        // SURVEILLANCE DES BUZZS CORRIGÉE
+        // SURVEILLANCE DES BUZZS
         onValue(ref(db, `rooms/${roomId}/buzzHistory`), (snapshot) => {
             if (snapshot.exists()) {
                 audio.pause();
                 const history = snapshot.val();
                 const sortedEntries = Object.entries(history).sort((a, b) => a[1] - b[1]);
-                
                 buzzListContent.innerHTML = ""; 
                 
                 sortedEntries.forEach(([uid, timestamp], i) => {
                     const pseudo = playersCache[uid] ? playersCache[uid].pseudo : "Anonyme";
-                    
                     if (i === 0) {
                         fastestPlayerLabel.innerText = `🚨 ${pseudo} A BUZZÉ !`;
                         buzzStatusPill.className = "bg-rose-100 dark:bg-rose-900/40 px-6 py-2 rounded-full border-2 border-rose-400 animate-bounce shadow-lg";
                         displayTitle.innerText = "BUZZ DÉTECTÉ !";
                     }
-
                     const delay = i === 0 ? "🏆 GAGNANT" : `+${((timestamp - sortedEntries[0][1]) / 1000).toFixed(2)}s`;
                     const div = document.createElement('div');
                     div.className = `p-3 rounded-xl flex justify-between items-center bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 mb-1`;
@@ -198,19 +201,16 @@
                 update(ref(db, `rooms/${roomId}`), { state: 'playing', startTime: Date.now(), buzzHistory: null });
             }
         };
-
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
-
         document.getElementById('ctrl-stop').onclick = () => { 
-            audio.pause(); 
-            audio.currentTime = 0; 
-            update(ref(db, `rooms/${roomId}`), { buzzHistory: null, revealed: false, state: 'stopped' });
+            audio.pause(); audio.currentTime = 0; 
+            remove(ref(db, `rooms/${roomId}/buzzHistory`));
+            update(ref(db, `rooms/${roomId}`), { state: 'stopped', revealed: false });
         };
-
-        document.getElementById('ctrl-reveal').onclick = async () => {
+        document.getElementById('ctrl-reveal').onclick = () => {
             const zone = document.getElementById('reveal-zone');
             const isNowHidden = zone.classList.toggle('hidden');
-            await update(ref(db, `rooms/${roomId}`), { revealed: !isNowHidden });
+            update(ref(db, `rooms/${roomId}`), { revealed: !isNowHidden });
         };
 
         document.getElementById('open-history').onclick = () => document.getElementById('modal-history').classList.remove('hidden');
