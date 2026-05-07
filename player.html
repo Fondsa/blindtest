@@ -36,9 +36,18 @@
         .buzzer-btn:disabled {
             background: #d1d5db; box-shadow: 0 10px 0 #9ca3af;
             opacity: 0.6; cursor: not-allowed; transform: translateY(5px);
+            filter: grayscale(1);
         }
         .bento-card { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 24px; }
         .dark .bento-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
+        
+        .answer-reveal {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -60,9 +69,15 @@
             </div>
         </div>
 
-        <div class="flex flex-col items-center space-y-8">
+        <div class="flex flex-col items-center space-y-6 w-full">
+            
+            <div id="reveal-zone" class="hidden w-full max-w-xs bento-card p-6 text-center border-4 border-rose-300 answer-reveal">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">La réponse était</p>
+                <p id="revealed-answer" class="text-lg font-black text-rose-500 uppercase italic leading-tight"></p>
+            </div>
+
             <div id="status-text" class="text-xl font-black text-gray-800 dark:text-white uppercase italic tracking-tighter text-center transition-all duration-300">
-                En attente de l'hôte...
+                En attente...
             </div>
             
             <button id="buzzer" class="buzzer-btn" disabled>
@@ -71,8 +86,10 @@
         </div>
 
         <div class="w-full max-w-xs mb-4 text-center">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Connecté à la room</p>
-            <p id="display-room" class="text-lg font-black text-gray-800 dark:text-white">----</p>
+            <div class="bento-card p-3">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Connecté à la room</p>
+                <p id="display-room" class="text-lg font-black text-gray-800 dark:text-white">----</p>
+            </div>
             <button id="btn-quit" class="mt-4 text-xs font-bold text-gray-400 underline">Quitter la partie</button>
         </div>
 
@@ -82,7 +99,7 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { ref, onValue, onDisconnect, remove, update, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { ref, onValue, onDisconnect, remove, update, serverTimestamp, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         if (localStorage.getItem('dark') === 'true') document.documentElement.classList.add('dark');
@@ -91,10 +108,9 @@
         const roomId = urlParams.get('room');
         const buzzerBtn = document.getElementById('buzzer');
         const statusText = document.getElementById('status-text');
-        const audioPlayer = document.getElementById('local-audio');
+        const revealZone = document.getElementById('reveal-zone');
+        const revealedAnswer = document.getElementById('revealed-answer');
         
-        let canBuzz = false;
-
         onAuthStateChanged(auth, (user) => {
             if (!user || !roomId) { window.location.href = 'menu.html'; return; }
 
@@ -105,7 +121,7 @@
             document.getElementById('display-room').innerText = roomId;
             onDisconnect(playerRef).remove();
 
-            // 1. Synchro Infos Joueur (Pseudo, Score)
+            // 1. Synchro Infos Joueur
             onValue(playerRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const d = snapshot.val();
@@ -115,80 +131,56 @@
                 }
             });
 
-            // 2. Synchro État de la Room
+            // 2. Synchro État de la Room (Logique de Jeu)
             onValue(roomRef, (snapshot) => {
                 const data = snapshot.val();
                 if (!data) return;
 
-                // Gestion de la révélation (Régie clique sur Révéler)
-                if (data.revealed && data.currentTrack) {
-                    statusText.innerText = data.currentTrack;
-                    statusText.className = "text-lg font-black text-blue-500 uppercase italic text-center";
-                    canBuzz = false;
+                const myBuzz = data.buzzHistory && data.buzzHistory[playerId];
+
+                // GESTION RÉVÉLATION (L'host a cliqué sur Révéler)
+                if (data.revealed) {
+                    revealZone.classList.remove('hidden');
+                    revealedAnswer.innerText = data.currentTrack || "???";
+                    statusText.innerText = "FIN DE MANCHE";
+                    statusText.className = "text-xl font-black text-rose-500 uppercase italic text-center";
                     buzzerBtn.disabled = true;
                     return;
-                }
-
-                // Gestion de la musique
-                if (data.state === 'playing' && data.currentAudio) {
-                    if (audioPlayer.dataset.lastStart !== String(data.startTime)) {
-                        audioPlayer.src = data.currentAudio;
-                        audioPlayer.dataset.lastStart = data.startTime;
-                        audioPlayer.play().catch(() => {});
-                        canBuzz = true;
-                        buzzerBtn.disabled = false;
-                        statusText.innerText = "ÉCOUTE BIEN...";
-                        statusText.className = "text-xl font-black text-gray-800 dark:text-white uppercase italic text-center";
-                    }
-                }
-
-                // Gestion des Buzz
-                if (data.buzzHistory) {
-                    audioPlayer.pause();
-                    canBuzz = false;
-                    buzzerBtn.disabled = true;
-                    
-                    // On vérifie qui est le premier dans l'historique
-                    const history = Object.entries(data.buzzHistory).sort((a,b) => a[1] - b[1]);
-                    const winnerId = history[0][0];
-
-                    if (winnerId === playerId) {
-                        statusText.innerText = "C'EST À TOI !";
-                        statusText.className = "text-2xl font-black text-green-500 uppercase italic text-center";
-                    } else {
-                        statusText.innerText = "TROP TARD !";
-                        statusText.className = "text-xl font-black text-rose-500 uppercase italic text-center opacity-50";
-                    }
-                } else if (data.state === 'playing') {
-                    // Si pas de buzz mais musique en cours
-                    canBuzz = true;
-                    buzzerBtn.disabled = false;
-                    statusText.innerText = "BUZZ DISPONIBLE !";
                 } else {
-                    // État Ready ou Stop
-                    statusText.innerText = "PRÊT ?";
+                    revealZone.classList.add('hidden');
+                }
+
+                // GESTION DU BUZZER SELON L'ÉTAT
+                if (data.state === 'playing') {
+                    if (myBuzz) {
+                        // J'ai déjà buzzé
+                        buzzerBtn.disabled = true;
+                        statusText.innerText = "BUZZ ENREGISTRÉ !";
+                        statusText.className = "text-xl font-black text-green-500 uppercase italic text-center";
+                    } else {
+                        // Musique en cours, je peux buzzer (même si d'autres l'ont fait)
+                        buzzerBtn.disabled = false;
+                        statusText.innerText = "C'EST LE MOMENT !";
+                        statusText.className = "text-xl font-black text-gray-800 dark:text-white uppercase italic text-center animate-pulse";
+                    }
+                } else if (data.state === 'ready') {
                     buzzerBtn.disabled = true;
-                    canBuzz = false;
+                    statusText.innerText = "TENEZ-VOUS PRÊT...";
+                    statusText.className = "text-xl font-black text-gray-400 uppercase italic text-center";
+                } else {
+                    buzzerBtn.disabled = true;
+                    statusText.innerText = "EN ATTENTE...";
+                    statusText.className = "text-xl font-black text-gray-400 uppercase italic text-center";
                 }
             });
 
-            // 3. LOGIQUE DU BUZZ (Crucial)
+            // 3. LOGIQUE DU CLIC SUR BUZZER
             buzzerBtn.onclick = () => {
-                if (!canBuzz) return;
-                canBuzz = false;
-                buzzerBtn.disabled = true;
-
-                // A. On s'inscrit dans l'historique avec le temps précis du serveur
-                update(ref(db, `rooms/${roomId}/buzzHistory`), {
-                    [playerId]: serverTimestamp()
-                });
-
-                // B. On tente de devenir le buzzedBy officiel (pour la compatibilité)
-                const buzzedRef = ref(db, `rooms/${roomId}/buzzedBy`);
-                runTransaction(buzzedRef, (current) => {
-                    if (current === null) return playerId;
-                    return;
-                });
+                // On enregistre dans buzzHistory sans bloquer les autres
+                const myBuzzRef = ref(db, `rooms/${roomId}/buzzHistory/${playerId}`);
+                set(myBuzzRef, serverTimestamp());
+                
+                if (navigator.vibrate) navigator.vibrate(100); // Petit retour tactile
             };
 
             document.getElementById('btn-quit').onclick = async () => {
