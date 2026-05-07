@@ -38,10 +38,6 @@
 
         .loading-pulse { animation: pulse 1.5s infinite; opacity: 0.5; }
         @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 0.7; } 100% { opacity: 0.4; } }
-
-        /* Style Pop-up */
-        #modal-history.hidden { display: none; }
-        #modal-history.flex { display: flex; }
     </style>
 </head>
 <body>
@@ -55,7 +51,8 @@
         <div class="bento-card bg-white/95 dark:bg-zinc-900/95 w-full max-w-sm p-6 shadow-2xl border-4 border-rose-300">
             <h3 class="text-xl font-black text-gray-800 dark:text-white mb-4 uppercase italic text-center">🏆 Ordre des Buzz</h3>
             <div id="buzz-list-content" class="space-y-2 max-h-60 overflow-y-auto custom-scroll pr-2">
-                </div>
+                <p class="text-center text-gray-400 italic text-xs">Aucun buzz pour le moment</p>
+            </div>
             <button id="close-modal" class="mt-6 w-full py-3 bg-rose-400 text-white font-black rounded-2xl border-b-4 border-rose-600 active:translate-y-1 active:border-b-0 transition-all uppercase">Fermer</button>
         </div>
     </div>
@@ -69,16 +66,16 @@
             <button onclick="window.location.href='menu.html'" class="text-xs font-bold text-gray-400 underline">Quitter</button>
         </div>
 
-        <div class="bento-card p-6 text-center flex flex-col items-center justify-center min-h-[180px]">
+        <div class="bento-card p-6 text-center flex flex-col items-center justify-center min-h-[220px]">
             <h2 id="display-title" class="text-xl font-black text-gray-800 dark:text-white uppercase italic px-2">Prêt à jouer ?</h2>
             
             <div id="reveal-zone" class="hidden mt-2 p-2 bg-white/50 dark:bg-white/10 rounded-xl">
                 <p id="artist-name" class="text-rose-500 font-bold text-md uppercase italic"></p>
             </div>
 
-            <div id="buzzer-area" class="hidden mt-4 flex items-center justify-center gap-3">
-                <div class="bg-rose-100 dark:bg-rose-900/40 px-6 py-2 rounded-full border-2 border-rose-400 animate-bounce shadow-lg">
-                    <span class="text-rose-600 dark:text-rose-300 font-black text-sm uppercase italic">🚨 <span id="fastest-player">---</span> a buzzé !</span>
+            <div id="buzzer-area" class="mt-6 flex items-center justify-center gap-3">
+                <div id="buzz-status-pill" class="bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300">
+                    <span id="fastest-player-label" class="text-gray-400 dark:text-gray-500 font-black text-sm uppercase italic">En attente d'un buzz...</span>
                 </div>
                 <button id="open-history" class="w-12 h-12 bg-white dark:bg-zinc-800 rounded-full flex items-center justify-center shadow-md border-2 border-rose-200 hover:scale-110 transition-transform text-xl">📜</button>
             </div>
@@ -87,16 +84,12 @@
         <div class="flex-1 flex flex-col min-h-0 space-y-3">
             <div class="bento-card p-3 flex flex-col min-h-[45%]">
                 <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📦 Musiques de Base</h3>
-                <div id="list-base" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
-                    <p class="text-[10px] text-rose-400 animate-pulse italic text-center mt-2">Chargement...</p>
-                </div>
+                <div id="list-base" class="flex-1 overflow-y-auto space-y-2 custom-scroll"></div>
             </div>
 
             <div class="bento-card p-3 flex flex-col min-h-[45%]">
                 <h3 class="text-[10px] font-black mb-2 text-gray-400 uppercase tracking-widest">📂 Mes Imports</h3>
-                <div id="list-imported" class="flex-1 overflow-y-auto space-y-2 custom-scroll">
-                    <p class="text-[10px] text-rose-400 animate-pulse italic text-center mt-2">Chargement...</p>
-                </div>
+                <div id="list-imported" class="flex-1 overflow-y-auto space-y-2 custom-scroll"></div>
             </div>
         </div>
 
@@ -122,8 +115,8 @@
         const roomId = urlParams.get('room');
         const audio = document.getElementById('audio-player');
         const displayTitle = document.getElementById('display-title');
-        const buzzerArea = document.getElementById('buzzer-area');
-        const fastestPlayerName = document.getElementById('fastest-player');
+        const buzzStatusPill = document.getElementById('buzz-status-pill');
+        const fastestPlayerLabel = document.getElementById('fastest-player-label');
         const buzzListContent = document.getElementById('buzz-list-content');
         
         document.getElementById('room-id').innerText = roomId;
@@ -145,70 +138,56 @@
                     item.innerText = fullName;
                     
                     item.onclick = async () => {
-                        try {
-                            displayTitle.innerText = "Chargement...";
-                            displayTitle.classList.add('loading-pulse');
-                            const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
+                        displayTitle.innerText = "Chargement...";
+                        const trackSnap = await get(ref(db, `${dbPath}/${id}/url`));
+                        if (trackSnap.exists()) {
+                            // CHARGEMENT UNIQUEMENT (Pas de play automatique)
+                            audio.src = trackSnap.val();
+                            displayTitle.innerText = `PRÊT : ${fullName}`;
+                            document.getElementById('artist-name').innerText = fullName;
+                            document.getElementById('reveal-zone').classList.add('hidden');
                             
-                            if (trackSnap.exists()) {
-                                audio.src = trackSnap.val();
-                                displayTitle.innerText = `PRÊT : ${fullName}`;
-                                displayTitle.classList.remove('loading-pulse');
-                                document.getElementById('artist-name').innerText = fullName;
-                                document.getElementById('reveal-zone').classList.add('hidden');
-                                
-                                // CACHER LE BUZZ QUAND ON LANCE UNE MUSIQUE
-                                buzzerArea.classList.add('hidden');
-
-                                await update(ref(db, `rooms/${roomId}`), { 
-                                    state: 'playing', 
-                                    currentTrack: fullName,
-                                    currentAudio: trackSnap.val(),
-                                    startTime: Date.now(),
-                                    buzzedBy: null,
-                                    buzzHistory: null // CRITIQUE : Reset l'historique ici
-                                });
-                                audio.play(); 
-                            }
-                        } catch (e) { console.error(e); }
+                            // Reset visuel du buzz
+                            fastestPlayerLabel.innerText = "En attente d'un buzz...";
+                            buzzStatusPill.className = "bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm";
+                            
+                            await update(ref(db, `rooms/${roomId}`), { 
+                                state: 'ready', // On change l'état en 'ready' au lieu de 'playing'
+                                currentTrack: fullName,
+                                currentAudio: trackSnap.val(),
+                                buzzedBy: null,
+                                buzzHistory: null
+                            });
+                        }
                     };
                     container.appendChild(item);
                 });
-            } else {
-                container.innerHTML = `<p class="text-[10px] text-gray-400 italic text-center mt-2">Aucun titre</p>`;
             }
         }
 
-        // --- SURVEILLANCE DES BUZZS ET HISTORIQUE ---
+        // --- SURVEILLANCE DES BUZZS ---
         onValue(ref(db, `rooms/${roomId}/buzzHistory`), async (snapshot) => {
             if (snapshot.exists()) {
-                audio.pause(); // Stop automatique sur buzz
+                audio.pause();
                 const history = snapshot.val();
-                
-                // Trier par timestamp (plus petit = premier)
                 const sortedEntries = Object.entries(history).sort((a, b) => a[1] - b[1]);
                 
-                buzzListContent.innerHTML = ""; // Vider le pop-up
+                buzzListContent.innerHTML = ""; 
                 
                 for (let i = 0; i < sortedEntries.length; i++) {
                     const uid = sortedEntries[i][0];
                     const timestamp = sortedEntries[i][1];
-                    
-                    // Récupérer le pseudo directement dans la room
                     const playerSnap = await get(ref(db, `rooms/${roomId}/players/${uid}/pseudo`));
                     const pseudo = playerSnap.exists() ? playerSnap.val() : "Anonyme";
                     
                     if (i === 0) {
-                        // On affiche le premier sur l'interface principale
-                        fastestPlayerName.innerText = pseudo;
-                        buzzerArea.classList.remove('hidden'); // ON MONTRE LA ZONE ICI
-                        displayTitle.innerText = "🚨 BUZZ DÉTECTÉ !";
+                        // Mise à jour de la pilule visuelle
+                        fastestPlayerLabel.innerText = `🚨 ${pseudo} A BUZZÉ !`;
+                        buzzStatusPill.className = "bg-rose-100 dark:bg-rose-900/40 px-6 py-2 rounded-full border-2 border-rose-400 animate-bounce shadow-lg";
+                        displayTitle.innerText = "BUZZ DÉTECTÉ !";
                     }
 
-                    // Calcul du délai par rapport au premier
                     const delay = i === 0 ? "🏆 GAGNANT" : `+${((timestamp - sortedEntries[0][1]) / 1000).toFixed(2)}s`;
-
-                    // Ajout dans le pop-up
                     const div = document.createElement('div');
                     div.className = `p-3 rounded-xl flex justify-between items-center ${i === 0 ? 'bg-rose-100 dark:bg-rose-500/20 border-2 border-rose-400' : 'bg-gray-100 dark:bg-white/5'}`;
                     div.innerHTML = `
@@ -221,31 +200,34 @@
                     buzzListContent.appendChild(div);
                 }
             } else {
-                // Si pas de buzzHistory (nouveau morceau), on cache la zone
-                buzzerArea.classList.add('hidden');
-                if (displayTitle.innerText === "🚨 BUZZ DÉTECTÉ !") {
-                    displayTitle.innerText = "Prêt à jouer ?";
-                }
+                // État par défaut quand pas de buzz
+                buzzListContent.innerHTML = `<p class="text-center text-gray-400 italic text-xs">Aucun buzz pour le moment</p>`;
             }
         });
 
-        // ACTIONS DU MODAL
-        document.getElementById('open-history').onclick = () => {
-            document.getElementById('modal-history').classList.replace('hidden', 'flex');
-        };
-        document.getElementById('close-modal').onclick = () => {
-            document.getElementById('modal-history').classList.replace('flex', 'hidden');
-        };
-
         // COMMANDES RÉGIE
-        document.getElementById('ctrl-play').onclick = () => audio.play();
+        document.getElementById('ctrl-play').onclick = () => {
+            if (audio.src) {
+                audio.play();
+                update(ref(db, `rooms/${roomId}`), { state: 'playing', startTime: Date.now() });
+            }
+        };
+        
         document.getElementById('ctrl-pause').onclick = () => audio.pause();
+        
         document.getElementById('ctrl-stop').onclick = () => { 
             audio.pause(); 
             audio.currentTime = 0; 
             update(ref(db, `rooms/${roomId}`), { buzzedBy: null, buzzHistory: null });
+            fastestPlayerLabel.innerText = "En attente d'un buzz...";
+            buzzStatusPill.className = "bg-gray-100 dark:bg-zinc-800 px-6 py-2 rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-sm";
         };
+
         document.getElementById('ctrl-reveal').onclick = () => document.getElementById('reveal-zone').classList.toggle('hidden');
+
+        // MODAL
+        document.getElementById('open-history').onclick = () => document.getElementById('modal-history').classList.remove('hidden');
+        document.getElementById('close-modal').onclick = () => document.getElementById('modal-history').classList.add('hidden');
 
     </script>
 </body>
